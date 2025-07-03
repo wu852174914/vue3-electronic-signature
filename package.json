@@ -1,0 +1,64 @@
+{
+  "name": "vue3-electronic-signature",
+  "version": "1.0.0",
+  "description": "一个基于Vue3的电子签名组件库，支持手写签名、触摸绘制和多种导出格式",
+  "main": "dist/vue3-electronic-signature.umd.js",
+  "module": "dist/vue3-electronic-signature.es.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/vue3-electronic-signature.es.js",
+      "require": "./dist/vue3-electronic-signature.umd.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./dist/style.css": "./dist/style.css"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc && vite build",
+    "build:lib": "vue-tsc && vite build --mode lib",
+    "preview": "vite preview",
+    "type-check": "vue-tsc --noEmit",
+    "prepublishOnly": "npm run build:lib",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "vue3",
+    "electronic-signature",
+    "canvas",
+    "signature",
+    "handwriting",
+    "component",
+    "typescript"
+  ],
+  "author": "Vue3 Electronic Signature Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/vue3-electronic-signature.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/vue3-electronic-signature/issues"
+  },
+  "homepage": "https://github.com/your-username/vue3-electronic-signature#readme",
+  "peerDependencies": {
+    "vue": "^3.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@vitejs/plugin-vue": "^4.0.0",
+    "typescript": "^5.0.0",
+    "vite": "^4.0.0",
+    "vite-plugin-dts": "^3.0.0",
+    "vue": "^3.3.0",
+    "vue-tsc": "^3.0.1"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

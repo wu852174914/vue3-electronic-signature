@@ -1,0 +1,31 @@
+# 源代码文件
+src/
+examples/
+docs/
+tests/
+
+# 开发配置文件
+vite.config.ts
+tsconfig.json
+tsconfig.node.json
+.gitignore
+.editorconfig
+
+# 开发依赖
+node_modules/
+.vscode/
+.idea/
+
+# 构建临时文件
+*.log
+*.tmp
+.cache/
+
+# 测试文件
+coverage/
+*.test.ts
+*.spec.ts
+
+# 其他
+.DS_Store
+Thumbs.db
