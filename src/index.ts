@@ -15,7 +15,12 @@ export type {
   SignatureEvents,
   SignatureMethods,
   TouchEventType,
-  DrawOptions
+  DrawOptions,
+  SignatureReplay,
+  ReplayOptions,
+  ReplayState,
+  ReplayEvents,
+  ReplayController
 } from './types'
 
 // 导出工具函数
@@ -43,6 +48,12 @@ export {
   addWatermark,
   convertToGrayscale
 } from './utils/canvas'
+
+// 导出回放工具函数
+export {
+  SignatureReplayController,
+  createReplayData
+} from './utils/replay'
 
 // 插件安装函数
 const install = (app: App): void => {

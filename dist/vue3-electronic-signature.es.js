@@ -782,11 +782,13 @@ const ge = (e) => {
 }, be = "1.0.0";
 export {
   ft as ElectronicSignature,
+  Jt as SignatureReplayController,
   xe as addWatermark,
   Ht as calculateStrokeWidth,
   _ as cloneSignatureData,
   ke as convertToGrayscale,
   $ as createEmptySignatureData,
+  Lt as createReplayData,
   fe as cropSignature,
   Te as default,
   vt as drawSmoothPath,

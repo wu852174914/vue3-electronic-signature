@@ -318,3 +318,419 @@ const resizeCanvas = () => {
   signatureRef.value?.resize(500, 300)
 }
 ```
+
+## 🎬 回放功能 API
+
+### 回放相关属性
+
+#### replayMode
+- **类型**: `boolean`
+- **默认值**: `false`
+- **说明**: 是否启用回放模式
+
+```vue
+<ElectronicSignature :replay-mode="true" />
+```
+
+#### replayData
+- **类型**: `SignatureReplay | undefined`
+- **默认值**: `undefined`
+- **说明**: 回放数据对象
+
+```vue
+<ElectronicSignature
+  :replay-mode="true"
+  :replay-data="replayData"
+/>
+```
+
+#### replayOptions
+- **类型**: `ReplayOptions | undefined`
+- **默认值**: `undefined`
+- **说明**: 回放选项配置
+
+```vue
+<ElectronicSignature
+  :replay-mode="true"
+  :replay-data="replayData"
+  :replay-options="{
+    speed: 1.5,
+    loop: true,
+    showControls: true,
+    autoPlay: false
+  }"
+/>
+```
+
+### 回放控制方法
+
+#### startReplay(data: SignatureReplay, options?: ReplayOptions)
+开始回放签名
+
+**参数**:
+- `data`: 回放数据对象
+- `options`: 回放选项（可选）
+
+```typescript
+const startReplay = () => {
+  const replayData = signatureRef.value?.getReplayData()
+  if (replayData) {
+    signatureRef.value?.startReplay(replayData, {
+      speed: 1,
+      loop: false,
+      showControls: true,
+      autoPlay: true
+    })
+  }
+}
+```
+
+#### getReplayData(): SignatureReplay | null
+获取当前签名的回放数据
+
+```typescript
+const exportReplayData = () => {
+  const replayData = signatureRef.value?.getReplayData()
+  if (replayData) {
+    console.log('回放数据:', replayData)
+    // 可以保存到本地存储或发送到服务器
+    localStorage.setItem('signature-replay', JSON.stringify(replayData))
+  }
+}
+```
+
+#### setReplayMode(enabled: boolean)
+设置回放模式开关
+
+```typescript
+const toggleReplayMode = () => {
+  const isReplayMode = !replayMode.value
+  replayMode.value = isReplayMode
+  signatureRef.value?.setReplayMode(isReplayMode)
+}
+```
+
+#### play()
+播放回放
+
+```typescript
+const playReplay = () => {
+  signatureRef.value?.play()
+}
+```
+
+#### pause()
+暂停回放
+
+```typescript
+const pauseReplay = () => {
+  signatureRef.value?.pause()
+}
+```
+
+#### stop()
+停止回放
+
+```typescript
+const stopReplay = () => {
+  signatureRef.value?.stop()
+}
+```
+
+#### seek(time: number)
+跳转到指定时间
+
+**参数**:
+- `time`: 目标时间（毫秒）
+
+```typescript
+const seekToMiddle = () => {
+  const totalDuration = signatureRef.value?.getTotalDuration() || 0
+  signatureRef.value?.seek(totalDuration / 2)
+}
+```
+
+#### setSpeed(speed: number)
+设置回放速度
+
+**参数**:
+- `speed`: 速度倍率（0.1-5.0）
+
+```typescript
+const changeSpeed = (speed: number) => {
+  signatureRef.value?.setSpeed(speed)
+}
+```
+
+#### getState(): ReplayState
+获取当前回放状态
+
+**返回值**: `'idle' | 'playing' | 'paused' | 'stopped' | 'completed'`
+
+```typescript
+const checkReplayState = () => {
+  const state = signatureRef.value?.getState()
+  console.log('当前回放状态:', state)
+}
+```
+
+#### getCurrentTime(): number
+获取当前回放时间（毫秒）
+
+```typescript
+const showCurrentTime = () => {
+  const currentTime = signatureRef.value?.getCurrentTime() || 0
+  console.log('当前时间:', currentTime, 'ms')
+}
+```
+
+#### getTotalDuration(): number
+获取总回放时长（毫秒）
+
+```typescript
+const showTotalDuration = () => {
+  const totalDuration = signatureRef.value?.getTotalDuration() || 0
+  console.log('总时长:', totalDuration, 'ms')
+}
+```
+
+#### getProgress(): number
+获取回放进度（0-1）
+
+```typescript
+const showProgress = () => {
+  const progress = signatureRef.value?.getProgress() || 0
+  console.log('回放进度:', Math.round(progress * 100), '%')
+}
+```
+
+### 回放事件
+
+#### replay-start
+回放开始时触发
+
+```vue
+<ElectronicSignature @replay-start="onReplayStart" />
+```
+
+```typescript
+const onReplayStart = () => {
+  console.log('回放开始')
+}
+```
+
+#### replay-progress
+回放进度更新时触发
+
+**参数**:
+- `progress`: 进度值（0-1）
+- `currentTime`: 当前时间（毫秒）
+
+```vue
+<ElectronicSignature @replay-progress="onReplayProgress" />
+```
+
+```typescript
+const onReplayProgress = (progress: number, currentTime: number) => {
+  console.log(`回放进度: ${Math.round(progress * 100)}%`)
+  console.log(`当前时间: ${currentTime}ms`)
+}
+```
+
+#### replay-pause
+回放暂停时触发
+
+```vue
+<ElectronicSignature @replay-pause="onReplayPause" />
+```
+
+#### replay-resume
+回放恢复时触发
+
+```vue
+<ElectronicSignature @replay-resume="onReplayResume" />
+```
+
+#### replay-stop
+回放停止时触发
+
+```vue
+<ElectronicSignature @replay-stop="onReplayStop" />
+```
+
+#### replay-complete
+回放完成时触发
+
+```vue
+<ElectronicSignature @replay-complete="onReplayComplete" />
+```
+
+```typescript
+const onReplayComplete = () => {
+  console.log('回放完成')
+  // 可以在这里执行回放完成后的逻辑
+}
+```
+
+#### replay-path-start
+开始绘制笔画时触发
+
+**参数**:
+- `pathIndex`: 笔画索引
+- `path`: 笔画数据
+
+```vue
+<ElectronicSignature @replay-path-start="onReplayPathStart" />
+```
+
+```typescript
+const onReplayPathStart = (pathIndex: number, path: SignaturePath) => {
+  console.log(`开始绘制第 ${pathIndex + 1} 笔画`)
+}
+```
+
+#### replay-path-end
+完成绘制笔画时触发
+
+**参数**:
+- `pathIndex`: 笔画索引
+- `path`: 笔画数据
+
+```vue
+<ElectronicSignature @replay-path-end="onReplayPathEnd" />
+```
+
+#### replay-speed-change
+回放速度改变时触发
+
+**参数**:
+- `speed`: 新的速度倍率
+
+```vue
+<ElectronicSignature @replay-speed-change="onReplaySpeedChange" />
+```
+
+```typescript
+const onReplaySpeedChange = (speed: number) => {
+  console.log('回放速度改变为:', speed, 'x')
+}
+```
+
+## 类型定义
+
+### SignatureReplay
+回放数据接口
+
+```typescript
+interface SignatureReplay {
+  paths: SignaturePath[]                     // 带时间信息的路径集合
+  totalDuration: number                      // 总回放时长（毫秒）
+  speed: number                              // 回放速度倍率
+  metadata: {                                // 签名元数据
+    deviceType: 'mouse' | 'touch' | 'pen'
+    averageSpeed: number                     // 平均书写速度（像素/秒）
+    totalDistance: number                    // 总绘制距离（像素）
+    averagePauseTime: number                 // 笔画间平均停顿时间（毫秒）
+  }
+}
+```
+
+### ReplayOptions
+回放选项接口
+
+```typescript
+interface ReplayOptions {
+  speed?: number                             // 回放速度倍率（0.1-5.0）
+  loop?: boolean                             // 是否循环播放
+  showControls?: boolean                     // 是否显示内置控制条
+  autoPlay?: boolean                         // 是否自动开始播放
+  startTime?: number                         // 回放开始时间（毫秒）
+  endTime?: number                           // 回放结束时间（毫秒）
+}
+```
+
+### ReplayState
+回放状态类型
+
+```typescript
+type ReplayState = 'idle' | 'playing' | 'paused' | 'stopped' | 'completed'
+```
+
+## 完整示例
+
+### 基础回放示例
+
+```vue
+<template>
+  <div>
+    <!-- 录制区域 -->
+    <ElectronicSignature
+      ref="recordingRef"
+      :width="400"
+      :height="200"
+      @signature-end="onSignatureEnd"
+    />
+
+    <!-- 回放区域 -->
+    <ElectronicSignature
+      ref="replayRef"
+      :width="400"
+      :height="200"
+      :replay-mode="true"
+      :replay-data="replayData"
+      :replay-options="replayOptions"
+      @replay-complete="onReplayComplete"
+    />
+
+    <!-- 控制按钮 -->
+    <div>
+      <button @click="startReplay">开始回放</button>
+      <button @click="pauseReplay">暂停</button>
+      <button @click="stopReplay">停止</button>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import type {
+  SignatureMethods,
+  SignatureData,
+  SignatureReplay
+} from 'vue3-electronic-signature'
+
+const recordingRef = ref<SignatureMethods>()
+const replayRef = ref<SignatureMethods>()
+const replayData = ref<SignatureReplay | null>(null)
+
+const replayOptions = reactive({
+  speed: 1,
+  loop: false,
+  showControls: true,
+  autoPlay: false
+})
+
+const onSignatureEnd = (data: SignatureData) => {
+  // 生成回放数据
+  replayData.value = recordingRef.value?.getReplayData() || null
+}
+
+const startReplay = () => {
+  if (replayData.value) {
+    replayRef.value?.startReplay(replayData.value, replayOptions)
+  }
+}
+
+const pauseReplay = () => {
+  replayRef.value?.pause()
+}
+
+const stopReplay = () => {
+  replayRef.value?.stop()
+}
+
+const onReplayComplete = () => {
+  console.log('回放完成')
+}
+</script>
+```

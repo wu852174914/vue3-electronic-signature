@@ -453,3 +453,430 @@ onUnmounted(() => {
 })
 </script>
 ```
+
+## 🎬 签名回放功能
+
+### 什么是签名回放？
+
+签名回放功能允许您录制签名过程并以动画形式重新播放，这对于以下场景非常有用：
+
+- **签名验证**: 审查签名的真实性和完整性
+- **教学演示**: 展示正确的签名方式
+- **用户体验**: 为用户提供签名过程的可视化反馈
+- **法律证据**: 保存签名过程作为法律证据
+
+### 基础回放使用
+
+#### 1. 录制签名并生成回放数据
+
+```vue
+<template>
+  <div class="signature-demo">
+    <!-- 录制区域 -->
+    <div class="recording-section">
+      <h3>📝 请在此处签名</h3>
+      <ElectronicSignature
+        ref="recordingRef"
+        :width="400"
+        :height="200"
+        stroke-color="#2196F3"
+        :stroke-width="3"
+        placeholder="请在此处签名"
+        show-toolbar
+        @signature-end="onSignatureEnd"
+        @signature-clear="onSignatureClear"
+      />
+      <button @click="generateReplay" :disabled="!hasSignature">
+        生成回放数据
+      </button>
+    </div>
+
+    <!-- 回放区域 -->
+    <div class="playback-section" v-if="replayData">
+      <h3>🎬 签名回放</h3>
+      <ElectronicSignature
+        ref="playbackRef"
+        :width="400"
+        :height="200"
+        :replay-mode="true"
+        :replay-data="replayData"
+        :replay-options="replayOptions"
+        @replay-complete="onReplayComplete"
+      />
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, reactive } from 'vue'
+import type {
+  SignatureMethods,
+  SignatureData,
+  SignatureReplay
+} from 'vue3-electronic-signature'
+
+const recordingRef = ref<SignatureMethods>()
+const playbackRef = ref<SignatureMethods>()
+const hasSignature = ref(false)
+const replayData = ref<SignatureReplay | null>(null)
+
+const replayOptions = reactive({
+  speed: 1,
+  loop: false,
+  showControls: true,
+  autoPlay: true
+})
+
+const onSignatureEnd = (data: SignatureData) => {
+  hasSignature.value = !data.isEmpty
+}
+
+const onSignatureClear = () => {
+  hasSignature.value = false
+  replayData.value = null
+}
+
+const generateReplay = () => {
+  if (recordingRef.value) {
+    replayData.value = recordingRef.value.getReplayData()
+  }
+}
+
+const onReplayComplete = () => {
+  console.log('回放完成')
+}
+</script>
+```
+
+#### 2. 手动控制回放
+
+```vue
+<template>
+  <div class="manual-control-demo">
+    <ElectronicSignature
+      ref="signatureRef"
+      :width="500"
+      :height="250"
+      :replay-mode="replayMode"
+      :replay-data="replayData"
+      :replay-options="{ showControls: false, autoPlay: false }"
+      @replay-progress="onProgress"
+      @replay-path-start="onPathStart"
+    />
+
+    <!-- 自定义控制面板 -->
+    <div class="control-panel">
+      <div class="playback-controls">
+        <button @click="play" :disabled="!canPlay">▶️ 播放</button>
+        <button @click="pause" :disabled="!canPause">⏸️ 暂停</button>
+        <button @click="stop" :disabled="!canStop">⏹️ 停止</button>
+      </div>
+
+      <div class="speed-control">
+        <label>播放速度：</label>
+        <select v-model="selectedSpeed" @change="changeSpeed">
+          <option value="0.5">0.5x</option>
+          <option value="1">1x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        </select>
+      </div>
+
+      <div class="progress-info">
+        <p>进度: {{ Math.round(progress * 100) }}%</p>
+        <p>当前笔画: {{ currentPath + 1 }} / {{ totalPaths }}</p>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import type { SignatureMethods, SignaturePath } from 'vue3-electronic-signature'
+
+const signatureRef = ref<SignatureMethods>()
+const replayMode = ref(true)
+const progress = ref(0)
+const currentPath = ref(0)
+const selectedSpeed = ref(1)
+const replayState = ref<'idle' | 'playing' | 'paused' | 'stopped'>('idle')
+
+// 计算属性
+const canPlay = computed(() => replayState.value !== 'playing')
+const canPause = computed(() => replayState.value === 'playing')
+const canStop = computed(() => replayState.value !== 'idle')
+const totalPaths = computed(() => replayData.value?.paths.length || 0)
+
+// 控制方法
+const play = () => {
+  signatureRef.value?.play()
+  replayState.value = 'playing'
+}
+
+const pause = () => {
+  signatureRef.value?.pause()
+  replayState.value = 'paused'
+}
+
+const stop = () => {
+  signatureRef.value?.stop()
+  replayState.value = 'stopped'
+  progress.value = 0
+  currentPath.value = 0
+}
+
+const changeSpeed = () => {
+  signatureRef.value?.setSpeed(selectedSpeed.value)
+}
+
+// 事件处理
+const onProgress = (progressValue: number) => {
+  progress.value = progressValue
+}
+
+const onPathStart = (pathIndex: number, path: SignaturePath) => {
+  currentPath.value = pathIndex
+}
+</script>
+```
+
+### 高级回放功能
+
+#### 1. 回放数据分析
+
+```vue
+<script setup lang="ts">
+import type { SignatureReplay } from 'vue3-electronic-signature'
+
+const analyzeSignature = (replayData: SignatureReplay) => {
+  const { metadata, paths, totalDuration } = replayData
+
+  console.log('📊 签名分析报告:')
+  console.log(`设备类型: ${metadata.deviceType}`)
+  console.log(`平均速度: ${Math.round(metadata.averageSpeed)} 像素/秒`)
+  console.log(`总距离: ${Math.round(metadata.totalDistance)} 像素`)
+  console.log(`笔画数量: ${paths.length}`)
+  console.log(`总时长: ${totalDuration} 毫秒`)
+  console.log(`平均停顿: ${metadata.averagePauseTime} 毫秒`)
+
+  // 分析每个笔画
+  paths.forEach((path, index) => {
+    const pathDuration = path.duration || 0
+    const pathDistance = calculatePathDistance(path.points)
+    const pathSpeed = pathDuration > 0 ? pathDistance / (pathDuration / 1000) : 0
+
+    console.log(`笔画 ${index + 1}:`)
+    console.log(`  - 点数: ${path.points.length}`)
+    console.log(`  - 时长: ${pathDuration}ms`)
+    console.log(`  - 距离: ${Math.round(pathDistance)}px`)
+    console.log(`  - 速度: ${Math.round(pathSpeed)}px/s`)
+  })
+}
+
+const calculatePathDistance = (points: SignaturePoint[]): number => {
+  let distance = 0
+  for (let i = 1; i < points.length; i++) {
+    const dx = points[i].x - points[i - 1].x
+    const dy = points[i].y - points[i - 1].y
+    distance += Math.sqrt(dx * dx + dy * dy)
+  }
+  return distance
+}
+</script>
+```
+
+#### 2. 回放数据的保存和加载
+
+```vue
+<script setup lang="ts">
+import type { SignatureReplay } from 'vue3-electronic-signature'
+
+// 保存回放数据到本地存储
+const saveReplayData = (replayData: SignatureReplay, name: string) => {
+  const savedReplays = JSON.parse(localStorage.getItem('signature-replays') || '{}')
+  savedReplays[name] = {
+    data: replayData,
+    savedAt: new Date().toISOString(),
+    metadata: {
+      pathCount: replayData.paths.length,
+      duration: replayData.totalDuration,
+      deviceType: replayData.metadata.deviceType
+    }
+  }
+  localStorage.setItem('signature-replays', JSON.stringify(savedReplays))
+}
+
+// 从本地存储加载回放数据
+const loadReplayData = (name: string): SignatureReplay | null => {
+  const savedReplays = JSON.parse(localStorage.getItem('signature-replays') || '{}')
+  return savedReplays[name]?.data || null
+}
+
+// 获取所有保存的回放数据列表
+const getSavedReplays = () => {
+  const savedReplays = JSON.parse(localStorage.getItem('signature-replays') || '{}')
+  return Object.keys(savedReplays).map(name => ({
+    name,
+    ...savedReplays[name].metadata,
+    savedAt: savedReplays[name].savedAt
+  }))
+}
+
+// 导出回放数据为JSON文件
+const exportReplayData = (replayData: SignatureReplay, filename: string) => {
+  const dataStr = JSON.stringify(replayData, null, 2)
+  const blob = new Blob([dataStr], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `${filename}.json`
+  link.click()
+
+  URL.revokeObjectURL(url)
+}
+
+// 从JSON文件导入回放数据
+const importReplayData = (file: File): Promise<SignatureReplay> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      try {
+        const replayData = JSON.parse(e.target?.result as string)
+        resolve(replayData)
+      } catch (error) {
+        reject(new Error('无效的回放数据文件'))
+      }
+    }
+    reader.onerror = () => reject(new Error('文件读取失败'))
+    reader.readAsText(file)
+  })
+}
+</script>
+```
+
+#### 3. 回放事件的详细处理
+
+```vue
+<script setup lang="ts">
+import type { SignaturePath } from 'vue3-electronic-signature'
+
+// 详细的回放事件处理
+const onReplayStart = () => {
+  console.log('🎬 回放开始')
+  // 可以在这里显示加载动画或提示
+}
+
+const onReplayProgress = (progress: number, currentTime: number) => {
+  // 更新进度条
+  progressValue.value = progress
+  currentTimeValue.value = currentTime
+
+  // 可以在这里触发其他UI更新
+  if (progress === 0.5) {
+    console.log('回放已完成50%')
+  }
+}
+
+const onReplayPathStart = (pathIndex: number, path: SignaturePath) => {
+  console.log(`开始绘制第 ${pathIndex + 1} 笔画`)
+
+  // 可以在这里高亮显示当前笔画信息
+  currentPathInfo.value = {
+    index: pathIndex,
+    pointCount: path.points.length,
+    color: path.strokeColor,
+    width: path.strokeWidth
+  }
+}
+
+const onReplayPathEnd = (pathIndex: number, path: SignaturePath) => {
+  console.log(`完成绘制第 ${pathIndex + 1} 笔画`)
+
+  // 可以在这里显示笔画完成的反馈
+  showPathCompleteAnimation(pathIndex)
+}
+
+const onReplayComplete = () => {
+  console.log('✅ 回放完成')
+
+  // 回放完成后的处理
+  if (replayOptions.loop) {
+    console.log('准备循环播放')
+  } else {
+    // 显示回放完成的提示
+    showCompletionMessage()
+  }
+}
+
+const onReplaySpeedChange = (speed: number) => {
+  console.log(`回放速度改变为: ${speed}x`)
+  speedIndicator.value = speed
+}
+
+// 辅助函数
+const showPathCompleteAnimation = (pathIndex: number) => {
+  // 实现笔画完成的动画效果
+}
+
+const showCompletionMessage = () => {
+  // 显示回放完成的消息
+}
+</script>
+```
+
+### 最佳实践
+
+#### 1. 性能优化
+
+```typescript
+// 对于长时间的签名，可以设置合适的回放选项
+const optimizedReplayOptions = {
+  speed: 2, // 加快回放速度
+  showControls: true, // 允许用户控制
+  startTime: 1000, // 跳过开始的空白时间
+  endTime: totalDuration - 500 // 跳过结束的空白时间
+}
+```
+
+#### 2. 错误处理
+
+```typescript
+const handleReplayError = (error: Error) => {
+  console.error('回放出错:', error)
+
+  // 重置回放状态
+  replayMode.value = false
+
+  // 显示错误提示
+  showErrorMessage('回放失败，请检查数据格式')
+}
+```
+
+#### 3. 用户体验优化
+
+```vue
+<template>
+  <div class="replay-container">
+    <!-- 加载状态 -->
+    <div v-if="isLoading" class="loading">
+      正在准备回放...
+    </div>
+
+    <!-- 回放组件 -->
+    <ElectronicSignature
+      v-else
+      :replay-mode="true"
+      :replay-data="replayData"
+      @replay-start="isLoading = false"
+    />
+
+    <!-- 进度提示 -->
+    <div class="progress-tip" v-if="showProgressTip">
+      当前正在绘制第 {{ currentPath + 1 }} 笔画
+    </div>
+  </div>
+</template>
+```
+
+通过这些功能，您可以创建丰富的签名回放体验，满足各种业务需求。

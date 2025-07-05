@@ -127,6 +127,136 @@
         </div>
       </section>
 
+      <!-- 签名回放功能 -->
+      <section class="demo-section">
+        <h2>🎬 签名回放功能</h2>
+        <p>录制和回放签名过程，支持播放控制和速度调节</p>
+
+        <!-- 录制区域 -->
+        <div class="replay-demo-container">
+          <div class="recording-area">
+            <h4>📝 录制签名</h4>
+            <ElectronicSignature
+              ref="recordingSignatureRef"
+              :width="400"
+              :height="200"
+              stroke-color="#E91E63"
+              :stroke-width="3"
+              placeholder="请在此处签名以录制回放数据"
+              show-toolbar
+              @signature-start="onRecordingStart"
+              @signature-end="onRecordingEnd"
+              @signature-clear="onRecordingClear"
+            />
+            <div class="demo-controls">
+              <button @click="clearRecording">清除录制</button>
+              <button @click="generateReplayData" :disabled="!hasRecordingData">生成回放数据</button>
+            </div>
+            <div v-if="recordingInfo" class="recording-info">
+              <p><strong>录制状态:</strong> {{ recordingStatus }}</p>
+              <p><strong>笔画数量:</strong> {{ recordingInfo.pathCount }}</p>
+              <p><strong>总点数:</strong> {{ recordingInfo.totalPoints }}</p>
+            </div>
+          </div>
+
+          <!-- 回放区域 -->
+          <div class="playback-area">
+            <h4>🎬 回放签名</h4>
+            <ElectronicSignature
+              ref="playbackSignatureRef"
+              :width="400"
+              :height="200"
+              :replay-mode="replayMode"
+              :replay-data="replayData"
+              :replay-options="replayOptions"
+              @replay-start="onReplayStart"
+              @replay-progress="onReplayProgress"
+              @replay-pause="onReplayPause"
+              @replay-resume="onReplayResume"
+              @replay-stop="onReplayStop"
+              @replay-complete="onReplayComplete"
+              @replay-path-start="onReplayPathStart"
+              @replay-path-end="onReplayPathEnd"
+              @replay-speed-change="onReplaySpeedChange"
+            />
+
+            <!-- 自定义回放控制 -->
+            <div class="custom-replay-controls">
+              <div class="control-buttons">
+                <button
+                  @click="startReplay"
+                  :disabled="!replayData || replayState === 'playing'"
+                  class="btn-play"
+                >
+                  ▶️ 播放
+                </button>
+                <button
+                  @click="pauseReplay"
+                  :disabled="replayState !== 'playing'"
+                  class="btn-pause"
+                >
+                  ⏸️ 暂停
+                </button>
+                <button
+                  @click="stopReplay"
+                  :disabled="replayState === 'idle'"
+                  class="btn-stop"
+                >
+                  ⏹️ 停止
+                </button>
+                <button
+                  @click="toggleReplayMode"
+                  class="btn-mode"
+                >
+                  {{ replayMode ? '退出回放模式' : '进入回放模式' }}
+                </button>
+              </div>
+
+              <div class="replay-settings">
+                <label>
+                  回放速度：
+                  <select v-model="selectedSpeed" @change="changeReplaySpeed">
+                    <option value="0.5">0.5x</option>
+                    <option value="1">1x</option>
+                    <option value="1.5">1.5x</option>
+                    <option value="2">2x</option>
+                  </select>
+                </label>
+                <label>
+                  <input v-model="replayOptions.loop" type="checkbox" />
+                  循环播放
+                </label>
+                <label>
+                  <input v-model="replayOptions.showControls" type="checkbox" />
+                  显示内置控制条
+                </label>
+              </div>
+            </div>
+
+            <!-- 回放信息面板 -->
+            <div v-if="replayData" class="replay-info-panel">
+              <div class="replay-status">
+                <h5>📊 回放状态</h5>
+                <p><strong>状态:</strong> {{ replayState }}</p>
+                <p><strong>进度:</strong> {{ Math.round(replayProgress * 100) }}%</p>
+                <p><strong>当前时间:</strong> {{ formatTime(currentTime) }}</p>
+                <p><strong>总时长:</strong> {{ formatTime(totalDuration) }}</p>
+                <p><strong>当前笔画:</strong> {{ currentPathIndex + 1 }} / {{ replayData.paths.length }}</p>
+              </div>
+
+              <div class="signature-metadata">
+                <h5>📈 签名分析</h5>
+                <p><strong>设备类型:</strong> {{ replayData.metadata.deviceType }}</p>
+                <p><strong>平均速度:</strong> {{ Math.round(replayData.metadata.averageSpeed) }} 像素/秒</p>
+                <p><strong>总距离:</strong> {{ Math.round(replayData.metadata.totalDistance) }} 像素</p>
+                <p><strong>平均停顿:</strong> {{ replayData.metadata.averagePauseTime }} 毫秒</p>
+                <p><strong>笔画数量:</strong> {{ replayData.paths.length }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <!-- 导出预览 -->
       <section class="demo-section">
         <h2>导出预览</h2>
@@ -147,15 +277,24 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ElectronicSignature } from '../src'
-import type { SignatureData, SignatureMethods } from '../src'
+import type {
+  SignatureData,
+  SignatureMethods,
+  SignatureReplay,
+  ReplayOptions,
+  ReplayState,
+  SignaturePath
+} from '../src'
 
 // 组件引用
 const basicSignatureRef = ref<SignatureMethods>()
 const customSignatureRef = ref<SignatureMethods>()
 const responsiveSignatureRef = ref<SignatureMethods>()
 const dataSignatureRef = ref<SignatureMethods>()
+const recordingSignatureRef = ref<SignatureMethods>()
+const playbackSignatureRef = ref<SignatureMethods>()
 
 // 自定义样式配置
 const customStyle = reactive({
@@ -184,6 +323,32 @@ const exportedImages = ref<Array<{
   data: string
   filename: string
 }>>([])
+
+// 回放功能相关状态
+const replayMode = ref(false)
+const replayData = ref<SignatureReplay | null>(null)
+const replayState = ref<ReplayState>('idle')
+const replayProgress = ref(0)
+const currentTime = ref(0)
+const totalDuration = ref(0)
+const currentPathIndex = ref(-1)
+const selectedSpeed = ref(1)
+
+// 录制相关状态
+const recordingStatus = ref('等待录制')
+const hasRecordingData = ref(false)
+const recordingInfo = ref<{
+  pathCount: number
+  totalPoints: number
+} | null>(null)
+
+// 回放选项配置
+const replayOptions = reactive<ReplayOptions>({
+  speed: 1,
+  loop: false,
+  showControls: true,
+  autoPlay: false
+})
 
 // 事件处理
 const onSignatureStart = () => {
@@ -247,7 +412,7 @@ const loadSampleSignature = () => {
 
 const copySignature = async () => {
   if (!dataSignatureRef.value) return
-  
+
   try {
     const imageData = dataSignatureRef.value.save({ format: 'png' })
     await navigator.clipboard.writeText(imageData)
@@ -256,6 +421,134 @@ const copySignature = async () => {
     console.error('复制失败:', error)
     alert('复制失败，请手动保存')
   }
+}
+
+// 录制相关事件处理
+const onRecordingStart = () => {
+  recordingStatus.value = '正在录制'
+  console.log('开始录制签名')
+}
+
+const onRecordingEnd = (data: SignatureData) => {
+  recordingStatus.value = '录制完成'
+  hasRecordingData.value = !data.isEmpty
+
+  if (!data.isEmpty) {
+    const totalPoints = data.paths.reduce((sum, path) => sum + path.points.length, 0)
+    recordingInfo.value = {
+      pathCount: data.paths.length,
+      totalPoints
+    }
+  }
+
+  console.log('录制结束', data)
+}
+
+const onRecordingClear = () => {
+  recordingStatus.value = '等待录制'
+  hasRecordingData.value = false
+  recordingInfo.value = null
+  replayData.value = null
+  console.log('清除录制')
+}
+
+const clearRecording = () => {
+  recordingSignatureRef.value?.clear()
+}
+
+const generateReplayData = () => {
+  if (!recordingSignatureRef.value) return
+
+  const signatureData = recordingSignatureRef.value.getSignatureData()
+  if (!signatureData.isEmpty) {
+    replayData.value = recordingSignatureRef.value.getReplayData()
+    console.log('生成回放数据', replayData.value)
+  }
+}
+
+// 回放控制函数
+const startReplay = () => {
+  if (!playbackSignatureRef.value || !replayData.value) return
+
+  replayMode.value = true
+  playbackSignatureRef.value.setReplayMode(true)
+  playbackSignatureRef.value.startReplay(replayData.value, replayOptions)
+}
+
+const pauseReplay = () => {
+  playbackSignatureRef.value?.pause()
+}
+
+const stopReplay = () => {
+  playbackSignatureRef.value?.stop()
+}
+
+const toggleReplayMode = () => {
+  replayMode.value = !replayMode.value
+  playbackSignatureRef.value?.setReplayMode(replayMode.value)
+}
+
+const changeReplaySpeed = () => {
+  playbackSignatureRef.value?.setSpeed(selectedSpeed.value)
+}
+
+// 回放事件处理
+const onReplayStart = () => {
+  replayState.value = 'playing'
+  console.log('回放开始')
+}
+
+const onReplayProgress = (progress: number, time: number) => {
+  replayProgress.value = progress
+  currentTime.value = time
+  if (playbackSignatureRef.value) {
+    totalDuration.value = playbackSignatureRef.value.getTotalDuration()
+  }
+}
+
+const onReplayPause = () => {
+  replayState.value = 'paused'
+  console.log('回放暂停')
+}
+
+const onReplayResume = () => {
+  replayState.value = 'playing'
+  console.log('回放恢复')
+}
+
+const onReplayStop = () => {
+  replayState.value = 'stopped'
+  currentTime.value = 0
+  replayProgress.value = 0
+  console.log('回放停止')
+}
+
+const onReplayComplete = () => {
+  replayState.value = 'completed'
+  console.log('回放完成')
+}
+
+const onReplayPathStart = (pathIndex: number, path: SignaturePath) => {
+  currentPathIndex.value = pathIndex
+  console.log(`开始绘制第 ${pathIndex + 1} 笔画`, path)
+}
+
+const onReplayPathEnd = (pathIndex: number, path: SignaturePath) => {
+  console.log(`完成绘制第 ${pathIndex + 1} 笔画`, path)
+}
+
+const onReplaySpeedChange = (speed: number) => {
+  selectedSpeed.value = speed
+  console.log('回放速度改变:', speed)
+}
+
+// 工具函数
+const formatTime = (milliseconds: number): string => {
+  const seconds = Math.floor(milliseconds / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 </script>
 
@@ -394,5 +687,164 @@ h1 {
 
 .export-item a:hover {
   background: #1976D2;
+}
+
+/* 回放功能样式 */
+.replay-demo-container {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-top: 20px;
+}
+
+@media (max-width: 768px) {
+  .replay-demo-container {
+    grid-template-columns: 1fr;
+  }
+}
+
+.recording-area,
+.playback-area {
+  padding: 20px;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+}
+
+.recording-area h4,
+.playback-area h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 16px;
+}
+
+.recording-info {
+  margin-top: 15px;
+  padding: 12px;
+  background: #f8f9fa;
+  border-radius: 4px;
+  border-left: 4px solid #E91E63;
+}
+
+.recording-info p {
+  margin: 4px 0;
+  font-size: 14px;
+}
+
+.custom-replay-controls {
+  margin-top: 15px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.control-buttons {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 15px;
+  flex-wrap: wrap;
+}
+
+.control-buttons button {
+  padding: 8px 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.control-buttons button:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.control-buttons button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-play {
+  background: #4CAF50 !important;
+  color: white !important;
+  border-color: #4CAF50 !important;
+}
+
+.btn-pause {
+  background: #FF9800 !important;
+  color: white !important;
+  border-color: #FF9800 !important;
+}
+
+.btn-stop {
+  background: #F44336 !important;
+  color: white !important;
+  border-color: #F44336 !important;
+}
+
+.btn-mode {
+  background: #2196F3 !important;
+  color: white !important;
+  border-color: #2196F3 !important;
+}
+
+.replay-settings {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.replay-settings label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: #666;
+}
+
+.replay-settings select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+}
+
+.replay-info-panel {
+  margin-top: 15px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+@media (max-width: 600px) {
+  .replay-info-panel {
+    grid-template-columns: 1fr;
+  }
+}
+
+.replay-status,
+.signature-metadata {
+  padding: 12px;
+  background: white;
+  border-radius: 4px;
+  border: 1px solid #e0e0e0;
+}
+
+.replay-status h5,
+.signature-metadata h5 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 14px;
+}
+
+.replay-status p,
+.signature-metadata p {
+  margin: 4px 0;
+  font-size: 13px;
+  color: #666;
 }
 </style>
