@@ -1,0 +1,100 @@
+import { SignatureReplay, SignatureData, ReplayState, ReplayOptions, ReplayController } from '../types';
+
+/**
+ * 签名回放控制器
+ */
+export declare class SignatureReplayController implements ReplayController {
+    private canvas;
+    private ctx;
+    private replayData;
+    private state;
+    private currentTime;
+    private speed;
+    private animationId;
+    private startTimestamp;
+    private pausedTime;
+    private options;
+    private eventCallbacks;
+    constructor(canvas: HTMLCanvasElement);
+    /**
+     * 设置回放数据
+     */
+    setReplayData(data: SignatureReplay, options?: ReplayOptions): void;
+    /**
+     * 开始播放
+     */
+    play(): void;
+    /**
+     * 暂停播放
+     */
+    pause(): void;
+    /**
+     * 停止播放
+     */
+    stop(): void;
+    /**
+     * 跳转到指定时间
+     */
+    seek(time: number): void;
+    /**
+     * 设置播放速度
+     */
+    setSpeed(speed: number): void;
+    /**
+     * 获取当前状态
+     */
+    getState(): ReplayState;
+    /**
+     * 获取当前时间
+     */
+    getCurrentTime(): number;
+    /**
+     * 获取总时长
+     */
+    getTotalDuration(): number;
+    /**
+     * 获取当前进度（0-1）
+     */
+    getProgress(): number;
+    /**
+     * 动画循环
+     */
+    private animate;
+    /**
+     * 渲染指定时间的帧
+     */
+    private renderFrame;
+    /**
+     * 绘制完整路径
+     */
+    private drawCompletePath;
+    /**
+     * 绘制部分路径
+     */
+    private drawPartialPath;
+    /**
+     * 清除画布
+     */
+    private clearCanvas;
+    /**
+     * 注册事件监听器
+     */
+    on(event: string, callback: Function): void;
+    /**
+     * 移除事件监听器
+     */
+    off(event: string, callback?: Function): void;
+    /**
+     * 触发事件
+     */
+    private emit;
+    /**
+     * 销毁控制器
+     */
+    destroy(): void;
+}
+/**
+ * 从签名数据生成回放数据
+ */
+export declare function createReplayData(signatureData: SignatureData): SignatureReplay;
+//# sourceMappingURL=replay.d.ts.map

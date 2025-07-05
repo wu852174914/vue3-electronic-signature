@@ -29,9 +29,61 @@
     
     <!-- 工具栏（可选） -->
     <div v-if="showToolbar" class="signature-toolbar">
-      <button @click="clear" :disabled="disabled">清除</button>
-      <button @click="undo" :disabled="disabled || !canUndo">撤销</button>
-      <button @click="redo" :disabled="disabled || !canRedo">重做</button>
+      <button @click="clear" :disabled="!canInteract">清除</button>
+      <button @click="undo" :disabled="!canInteract || !canUndo">撤销</button>
+      <button @click="redo" :disabled="!canInteract || !canRedo">重做</button>
+    </div>
+
+    <!-- 回放控制条 -->
+    <div v-if="showReplayControls" class="replay-controls">
+      <div class="replay-buttons">
+        <button
+          @click="replayState === 'playing' ? pause() : play()"
+          :disabled="replayState === 'idle'"
+          class="replay-btn play-pause-btn"
+        >
+          <span v-if="replayState === 'playing'">⏸️</span>
+          <span v-else>▶️</span>
+        </button>
+
+        <button
+          @click="stop()"
+          :disabled="replayState === 'idle'"
+          class="replay-btn stop-btn"
+        >
+          ⏹️
+        </button>
+      </div>
+
+      <div class="replay-progress">
+        <input
+          type="range"
+          min="0"
+          :max="getTotalDuration()"
+          :value="replayCurrentTime"
+          @input="seek(Number(($event.target as HTMLInputElement).value))"
+          class="progress-slider"
+          :disabled="replayState === 'idle'"
+        />
+        <div class="time-display">
+          <span>{{ formatTime(replayCurrentTime) }}</span>
+          <span>/</span>
+          <span>{{ formatTime(getTotalDuration()) }}</span>
+        </div>
+      </div>
+
+      <div class="replay-speed">
+        <label>速度:</label>
+        <select
+          @change="setSpeed(Number(($event.target as HTMLSelectElement).value))"
+          class="speed-select"
+        >
+          <option value="0.5">0.5x</option>
+          <option value="1" selected>1x</option>
+          <option value="1.5">1.5x</option>
+          <option value="2">2x</option>
+        </select>
+      </div>
     </div>
   </div>
 </template>
@@ -56,7 +108,10 @@ import type {
   SignatureData,
   ExportOptions,
   DrawOptions,
-  SignatureMethods
+  SignatureMethods,
+  SignatureReplay,
+  ReplayOptions,
+  ReplayState
 } from '../types'
 import {
   drawSmoothPath,
@@ -66,6 +121,10 @@ import {
   createEmptySignatureData,
   cloneSignatureData
 } from '../utils/signature'
+import {
+  SignatureReplayController,
+  createReplayData
+} from '../utils/replay'
 
 // 组件属性
 interface ElectronicSignatureProps extends SignatureProps {
@@ -97,6 +156,16 @@ const emit = defineEmits<{
   'signature-clear': []
   'signature-undo': [data: SignatureData]
   'signature-redo': [data: SignatureData]
+  // 回放事件
+  'replay-start': []
+  'replay-progress': [progress: number, currentTime: number]
+  'replay-pause': []
+  'replay-resume': []
+  'replay-stop': []
+  'replay-complete': []
+  'replay-path-start': [pathIndex: number, path: SignaturePath]
+  'replay-path-end': [pathIndex: number, path: SignaturePath]
+  'replay-speed-change': [speed: number]
 }>()
 
 // 响应式引用
@@ -106,6 +175,13 @@ const currentPath = ref<SignaturePath | null>(null)
 const signatureData = ref<SignatureData>(createEmptySignatureData(0, 0))
 const history = ref<SignatureData[]>([])
 const historyIndex = ref(-1)
+
+// 回放相关状态
+const replayController = ref<SignatureReplayController | null>(null)
+const isReplayMode = ref(false)
+const replayState = ref<ReplayState>('idle')
+const replayProgress = ref(0)
+const replayCurrentTime = ref(0)
 
 // 计算属性
 const canvasWidth = computed(() => {
@@ -151,6 +227,11 @@ const showPlaceholder = computed(() => {
 const canUndo = computed(() => historyIndex.value > 0)
 const canRedo = computed(() => historyIndex.value < history.value.length - 1)
 
+// 回放相关计算属性
+const isReplayActive = computed(() => isReplayMode.value && replayController.value)
+const canInteract = computed(() => !isReplayActive.value && !props.disabled)
+const showReplayControls = computed(() => isReplayActive.value && props.replayOptions?.showControls !== false)
+
 const drawOptions = computed((): DrawOptions => ({
   strokeColor: props.strokeColor,
   strokeWidth: props.strokeWidth,
@@ -183,7 +264,7 @@ const getCanvasPoint = (clientX: number, clientY: number): SignaturePoint => {
 
 // 开始绘制
 const startDrawing = (point: SignaturePoint): void => {
-  if (props.disabled) return
+  if (!canInteract.value) return
   
   isDrawing.value = true
   currentPath.value = {
@@ -197,7 +278,7 @@ const startDrawing = (point: SignaturePoint): void => {
 
 // 继续绘制
 const continueDrawing = (point: SignaturePoint): void => {
-  if (!isDrawing.value || !currentPath.value || props.disabled) return
+  if (!isDrawing.value || !currentPath.value || !canInteract.value) return
   
   currentPath.value.points.push(point)
   
@@ -324,9 +405,142 @@ const redrawCanvas = (): void => {
   })
 }
 
+// 回放相关方法
+const initReplayController = (): void => {
+  if (!canvasRef.value) return
+
+  if (replayController.value) {
+    replayController.value.destroy()
+  }
+
+  replayController.value = new SignatureReplayController(canvasRef.value)
+
+  // 绑定回放事件
+  replayController.value.on('replay-start', () => {
+    replayState.value = 'playing'
+    emit('replay-start')
+  })
+
+  replayController.value.on('replay-progress', (progress: number, currentTime: number) => {
+    replayProgress.value = progress
+    replayCurrentTime.value = currentTime
+    emit('replay-progress', progress, currentTime)
+  })
+
+  replayController.value.on('replay-pause', () => {
+    replayState.value = 'paused'
+    emit('replay-pause')
+  })
+
+  replayController.value.on('replay-resume', () => {
+    replayState.value = 'playing'
+    emit('replay-resume')
+  })
+
+  replayController.value.on('replay-stop', () => {
+    replayState.value = 'stopped'
+    emit('replay-stop')
+  })
+
+  replayController.value.on('replay-complete', () => {
+    replayState.value = 'completed'
+    emit('replay-complete')
+  })
+
+  replayController.value.on('replay-path-start', (pathIndex: number, path: SignaturePath) => {
+    emit('replay-path-start', pathIndex, path)
+  })
+
+  replayController.value.on('replay-path-end', (pathIndex: number, path: SignaturePath) => {
+    emit('replay-path-end', pathIndex, path)
+  })
+
+  replayController.value.on('replay-speed-change', (speed: number) => {
+    emit('replay-speed-change', speed)
+  })
+}
+
+const startReplay = (replayData: SignatureReplay, options?: ReplayOptions): void => {
+  if (!replayController.value) {
+    initReplayController()
+  }
+
+  if (replayController.value) {
+    isReplayMode.value = true
+    replayController.value.setReplayData(replayData, options)
+
+    if (options?.autoPlay !== false) {
+      replayController.value.play()
+    }
+  }
+}
+
+const setReplayMode = (enabled: boolean): void => {
+  isReplayMode.value = enabled
+
+  if (!enabled && replayController.value) {
+    replayController.value.stop()
+    redrawCanvas()
+  }
+}
+
+const getReplayData = (): SignatureReplay | null => {
+  if (isSignatureEmpty(signatureData.value)) {
+    return null
+  }
+
+  return createReplayData(signatureData.value)
+}
+
+// 实现ReplayController接口的方法
+const play = (): void => {
+  replayController.value?.play()
+}
+
+const pause = (): void => {
+  replayController.value?.pause()
+}
+
+const stop = (): void => {
+  replayController.value?.stop()
+}
+
+const seek = (time: number): void => {
+  replayController.value?.seek(time)
+}
+
+const setSpeed = (speed: number): void => {
+  replayController.value?.setSpeed(speed)
+}
+
+const getState = (): ReplayState => {
+  return replayController.value?.getState() || 'idle'
+}
+
+const getCurrentTime = (): number => {
+  return replayController.value?.getCurrentTime() || 0
+}
+
+const getTotalDuration = (): number => {
+  return replayController.value?.getTotalDuration() || 0
+}
+
+const getProgress = (): number => {
+  return replayController.value?.getProgress() || 0
+}
+
+// 工具函数
+const formatTime = (milliseconds: number): string => {
+  const seconds = Math.floor(milliseconds / 1000)
+  const minutes = Math.floor(seconds / 60)
+  const remainingSeconds = seconds % 60
+
+  return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`
+}
+
 // 组件方法实现
 const clear = (): void => {
-  if (props.disabled) return
+  if (!canInteract.value) return
 
   signatureData.value = createEmptySignatureData(canvasWidth.value, canvasHeight.value)
   redrawCanvas()
@@ -335,7 +549,7 @@ const clear = (): void => {
 }
 
 const undo = (): void => {
-  if (!canUndo.value || props.disabled) return
+  if (!canUndo.value || !canInteract.value) return
 
   historyIndex.value--
   signatureData.value = cloneSignatureData(history.value[historyIndex.value])
@@ -344,7 +558,7 @@ const undo = (): void => {
 }
 
 const redo = (): void => {
-  if (!canRedo.value || props.disabled) return
+  if (!canRedo.value || !canInteract.value) return
 
   historyIndex.value++
   signatureData.value = cloneSignatureData(history.value[historyIndex.value])
@@ -362,7 +576,7 @@ const isEmpty = (): boolean => {
 }
 
 const fromDataURL = async (dataURL: string): Promise<void> => {
-  if (props.disabled) return
+  if (!canInteract.value) return
 
   const canvas = canvasRef.value!
   await loadImageToCanvas(canvas, dataURL)
@@ -378,7 +592,7 @@ const getSignatureData = (): SignatureData => {
 }
 
 const setSignatureData = (data: SignatureData): void => {
-  if (props.disabled) return
+  if (!canInteract.value) return
 
   signatureData.value = cloneSignatureData(data)
   redrawCanvas()
@@ -431,16 +645,39 @@ watch([() => props.width, () => props.height], () => {
   })
 })
 
+// 监听回放模式变化
+watch(() => props.replayMode, (newMode: boolean | undefined) => {
+  if (newMode !== undefined) {
+    setReplayMode(newMode)
+  }
+})
+
+// 监听回放数据变化
+watch(() => props.replayData, (newData: SignatureReplay | undefined) => {
+  if (newData && props.replayMode) {
+    startReplay(newData, props.replayOptions)
+  }
+})
+
 // 生命周期
 onMounted(() => {
   nextTick(() => {
     initCanvas()
+    initReplayController()
+
+    // 如果有初始回放数据，设置回放模式
+    if (props.replayMode && props.replayData) {
+      startReplay(props.replayData, props.replayOptions)
+    }
   })
 })
 
 // 清理事件监听器
 onUnmounted(() => {
-  // 清理可能的事件监听器
+  if (replayController.value) {
+    replayController.value.destroy()
+    replayController.value = null
+  }
 })
 
 // 暴露组件方法
@@ -453,7 +690,20 @@ defineExpose<SignatureMethods>({
   fromDataURL,
   getSignatureData,
   setSignatureData,
-  resize
+  resize,
+  // 回放相关方法
+  startReplay,
+  getReplayData,
+  setReplayMode,
+  play,
+  pause,
+  stop,
+  seek,
+  setSpeed,
+  getState,
+  getCurrentTime,
+  getTotalDuration,
+  getProgress
 })
 </script>
 
@@ -509,5 +759,110 @@ canvas {
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
+}
+
+/* 回放控制样式 */
+.replay-controls {
+  margin-top: 12px;
+  padding: 12px;
+  background: #f8f9fa;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 14px;
+}
+
+.replay-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.replay-btn {
+  width: 36px;
+  height: 36px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  transition: all 0.2s;
+}
+
+.replay-btn:hover:not(:disabled) {
+  background: #f5f5f5;
+  border-color: #999;
+}
+
+.replay-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.replay-progress {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.progress-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e9ecef;
+  outline: none;
+  cursor: pointer;
+}
+
+.progress-slider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #007bff;
+  cursor: pointer;
+}
+
+.progress-slider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #007bff;
+  cursor: pointer;
+  border: none;
+}
+
+.time-display {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #666;
+}
+
+.replay-speed {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: #666;
+}
+
+.speed-select {
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.speed-select:focus {
+  outline: none;
+  border-color: #007bff;
 }
 </style>

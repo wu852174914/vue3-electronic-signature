@@ -13,6 +13,7 @@
 - 💪 **TypeScript** - 完整的类型定义支持
 - 🎯 **压感模拟** - 根据绘制速度模拟压感效果
 - 🖼️ **图像处理** - 内置裁剪、缩放、水印等功能
+- 🎬 **签名回放** - 支持签名路径的录制和回放功能
 
 ## 📦 安装
 
@@ -130,6 +131,9 @@ const onSignatureEnd = (data: SignatureData) => {
 | borderStyle | string | '1px solid #ddd' | 边框样式 |
 | borderRadius | string | '4px' | 圆角大小 |
 | showToolbar | boolean | false | 是否显示工具栏 |
+| replayMode | boolean | false | 是否启用回放模式 |
+| replayData | SignatureReplay | - | 回放数据 |
+| replayOptions | ReplayOptions | - | 回放选项配置 |
 
 ### Events 事件
 
@@ -141,6 +145,15 @@ const onSignatureEnd = (data: SignatureData) => {
 | signature-clear | - | 清除签名时触发 |
 | signature-undo | (data: SignatureData) | 撤销操作时触发 |
 | signature-redo | (data: SignatureData) | 重做操作时触发 |
+| replay-start | - | 回放开始时触发 |
+| replay-progress | (progress: number, currentTime: number) | 回放进度更新时触发 |
+| replay-pause | - | 回放暂停时触发 |
+| replay-resume | - | 回放恢复时触发 |
+| replay-stop | - | 回放停止时触发 |
+| replay-complete | - | 回放完成时触发 |
+| replay-path-start | (pathIndex: number, path: SignaturePath) | 笔画开始时触发 |
+| replay-path-end | (pathIndex: number, path: SignaturePath) | 笔画结束时触发 |
+| replay-speed-change | (speed: number) | 回放速度改变时触发 |
 
 ### Methods 方法
 
@@ -155,6 +168,18 @@ const onSignatureEnd = (data: SignatureData) => {
 | getSignatureData() | - | SignatureData | 获取签名数据 |
 | setSignatureData(data) | SignatureData | void | 设置签名数据 |
 | resize(width?, height?) | number?, number? | void | 调整画布尺寸 |
+| startReplay(data, options?) | SignatureReplay, ReplayOptions? | void | 开始回放签名 |
+| getReplayData() | - | SignatureReplay \| null | 获取回放数据 |
+| setReplayMode(enabled) | boolean | void | 设置回放模式 |
+| play() | - | void | 播放回放 |
+| pause() | - | void | 暂停回放 |
+| stop() | - | void | 停止回放 |
+| seek(time) | number | void | 跳转到指定时间 |
+| setSpeed(speed) | number | void | 设置回放速度 |
+| getState() | - | ReplayState | 获取回放状态 |
+| getCurrentTime() | - | number | 获取当前回放时间 |
+| getTotalDuration() | - | number | 获取总回放时长 |
+| getProgress() | - | number | 获取回放进度(0-1) |
 
 ## 📋 类型定义
 
@@ -186,7 +211,176 @@ interface ExportOptions {
 }
 ```
 
-## 🎯 高级用法
+### SignatureReplay
+
+```typescript
+interface SignatureReplay {
+  paths: SignaturePath[]                     // 带时间信息的路径集合
+  totalDuration: number                      // 总回放时长（毫秒）
+  speed: number                              // 回放速度倍率
+  metadata: {                                // 签名元数据
+    deviceType: 'mouse' | 'touch' | 'pen'
+    averageSpeed: number                     // 平均书写速度（像素/秒）
+    totalDistance: number                    // 总绘制距离（像素）
+    averagePauseTime: number                 // 笔画间平均停顿时间（毫秒）
+  }
+}
+```
+
+### ReplayOptions
+
+```typescript
+interface ReplayOptions {
+  speed?: number                             // 回放速度倍率
+  loop?: boolean                             // 是否循环播放
+  showControls?: boolean                     // 是否显示控制条
+  autoPlay?: boolean                         // 是否自动开始播放
+  startTime?: number                         // 回放开始时间（毫秒）
+  endTime?: number                           // 回放结束时间（毫秒）
+}
+```
+
+### ReplayState
+
+```typescript
+type ReplayState = 'idle' | 'playing' | 'paused' | 'stopped' | 'completed'
+```
+
+## � 签名回放功能
+
+### 基础回放
+
+```vue
+<template>
+  <div>
+    <!-- 签名组件 -->
+    <ElectronicSignature
+      ref="signatureRef"
+      :width="400"
+      :height="200"
+      @signature-end="onSignatureEnd"
+    />
+
+    <!-- 回放组件 -->
+    <ElectronicSignature
+      :width="400"
+      :height="200"
+      :replay-mode="true"
+      :replay-data="replayData"
+      :replay-options="replayOptions"
+      @replay-complete="onReplayComplete"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { SignatureMethods, SignatureData, SignatureReplay } from 'vue3-electronic-signature'
+
+const signatureRef = ref<SignatureMethods>()
+const replayData = ref<SignatureReplay | null>(null)
+
+const replayOptions = {
+  speed: 1,
+  loop: false,
+  showControls: true,
+  autoPlay: true
+}
+
+const onSignatureEnd = (data: SignatureData) => {
+  // 从签名数据生成回放数据
+  replayData.value = signatureRef.value?.getReplayData() || null
+}
+
+const onReplayComplete = () => {
+  console.log('回放完成')
+}
+</script>
+```
+
+### 手动控制回放
+
+```vue
+<template>
+  <div>
+    <ElectronicSignature
+      ref="replayRef"
+      :width="400"
+      :height="200"
+      :replay-mode="true"
+      :replay-data="replayData"
+      :replay-options="{ showControls: false, autoPlay: false }"
+      @replay-progress="onProgress"
+    />
+
+    <!-- 自定义控制按钮 -->
+    <div class="custom-controls">
+      <button @click="play">播放</button>
+      <button @click="pause">暂停</button>
+      <button @click="stop">停止</button>
+      <button @click="setSpeed(0.5)">0.5x</button>
+      <button @click="setSpeed(1)">1x</button>
+      <button @click="setSpeed(2)">2x</button>
+    </div>
+
+    <div>进度: {{ Math.round(progress * 100) }}%</div>
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import type { SignatureMethods } from 'vue3-electronic-signature'
+
+const replayRef = ref<SignatureMethods>()
+const progress = ref(0)
+
+const play = () => replayRef.value?.play()
+const pause = () => replayRef.value?.pause()
+const stop = () => replayRef.value?.stop()
+const setSpeed = (speed: number) => replayRef.value?.setSpeed(speed)
+
+const onProgress = (progressValue: number) => {
+  progress.value = progressValue
+}
+</script>
+```
+
+### 回放事件监听
+
+```vue
+<template>
+  <ElectronicSignature
+    :replay-mode="true"
+    :replay-data="replayData"
+    @replay-start="onReplayStart"
+    @replay-path-start="onPathStart"
+    @replay-path-end="onPathEnd"
+    @replay-complete="onReplayComplete"
+  />
+</template>
+
+<script setup lang="ts">
+import type { SignaturePath } from 'vue3-electronic-signature'
+
+const onReplayStart = () => {
+  console.log('开始回放签名')
+}
+
+const onPathStart = (pathIndex: number, path: SignaturePath) => {
+  console.log(`开始绘制第 ${pathIndex + 1} 笔画`, path)
+}
+
+const onPathEnd = (pathIndex: number, path: SignaturePath) => {
+  console.log(`完成绘制第 ${pathIndex + 1} 笔画`, path)
+}
+
+const onReplayComplete = () => {
+  console.log('签名回放完成')
+}
+</script>
+```
+
+## �🎯 高级用法
 
 ### 获取和设置签名数据
 

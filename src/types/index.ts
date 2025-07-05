@@ -28,6 +28,12 @@ export interface SignatureProps {
   borderStyle?: string
   /** 画布圆角 */
   borderRadius?: string
+  /** 是否启用回放模式 */
+  replayMode?: boolean
+  /** 回放数据 */
+  replayData?: SignatureReplay
+  /** 回放选项 */
+  replayOptions?: ReplayOptions
 }
 
 /**
@@ -38,10 +44,12 @@ export interface SignaturePoint {
   x: number
   /** Y坐标 */
   y: number
-  /** 时间戳 */
+  /** 时间戳（毫秒） */
   time: number
   /** 压力值（0-1） */
   pressure?: number
+  /** 相对于笔画开始的时间偏移（毫秒） */
+  relativeTime?: number
 }
 
 /**
@@ -54,6 +62,12 @@ export interface SignaturePath {
   strokeColor: string
   /** 画笔粗细 */
   strokeWidth: number
+  /** 笔画开始时间（毫秒） */
+  startTime?: number
+  /** 笔画结束时间（毫秒） */
+  endTime?: number
+  /** 笔画持续时间（毫秒） */
+  duration?: number
 }
 
 /**
@@ -98,7 +112,7 @@ export interface ExportOptions {
 /**
  * 签名组件事件
  */
-export interface SignatureEvents {
+export interface SignatureEvents extends ReplayEvents {
   /** 开始签名 */
   'signature-start': () => void
   /** 签名进行中 */
@@ -116,7 +130,7 @@ export interface SignatureEvents {
 /**
  * 签名组件方法
  */
-export interface SignatureMethods {
+export interface SignatureMethods extends ReplayController {
   /** 清除签名 */
   clear(): void
   /** 撤销上一步操作 */
@@ -135,6 +149,12 @@ export interface SignatureMethods {
   setSignatureData(data: SignatureData): void
   /** 调整画布尺寸 */
   resize(width?: number, height?: number): void
+  /** 开始回放签名 */
+  startReplay(replayData: SignatureReplay, options?: ReplayOptions): void
+  /** 获取回放数据 */
+  getReplayData(): SignatureReplay | null
+  /** 设置回放模式 */
+  setReplayMode(enabled: boolean): void
 }
 
 /**
@@ -158,4 +178,98 @@ export interface DrawOptions {
     min: number
     max: number
   }
+}
+
+/**
+ * 签名回放数据
+ */
+export interface SignatureReplay {
+  /** 带时间信息的路径集合 */
+  paths: SignaturePath[]
+  /** 总回放时长（毫秒） */
+  totalDuration: number
+  /** 回放速度倍率 */
+  speed: number
+  /** 签名元数据 */
+  metadata: {
+    /** 设备类型 */
+    deviceType: 'mouse' | 'touch' | 'pen'
+    /** 平均书写速度（像素/秒） */
+    averageSpeed: number
+    /** 总绘制距离（像素） */
+    totalDistance: number
+    /** 笔画间平均停顿时间（毫秒） */
+    averagePauseTime: number
+  }
+}
+
+/**
+ * 回放控制状态
+ */
+export type ReplayState = 'idle' | 'playing' | 'paused' | 'stopped' | 'completed'
+
+/**
+ * 回放控制选项
+ */
+export interface ReplayOptions {
+  /** 回放速度倍率 */
+  speed?: number
+  /** 是否循环播放 */
+  loop?: boolean
+  /** 是否显示控制条 */
+  showControls?: boolean
+  /** 是否自动开始播放 */
+  autoPlay?: boolean
+  /** 回放开始时间（毫秒） */
+  startTime?: number
+  /** 回放结束时间（毫秒） */
+  endTime?: number
+}
+
+/**
+ * 回放事件
+ */
+export interface ReplayEvents {
+  /** 回放开始 */
+  'replay-start': () => void
+  /** 回放进度更新 */
+  'replay-progress': (progress: number, currentTime: number) => void
+  /** 回放暂停 */
+  'replay-pause': () => void
+  /** 回放恢复 */
+  'replay-resume': () => void
+  /** 回放停止 */
+  'replay-stop': () => void
+  /** 回放完成 */
+  'replay-complete': () => void
+  /** 笔画开始 */
+  'replay-path-start': (pathIndex: number, path: SignaturePath) => void
+  /** 笔画结束 */
+  'replay-path-end': (pathIndex: number, path: SignaturePath) => void
+  /** 回放速度改变 */
+  'replay-speed-change': (speed: number) => void
+}
+
+/**
+ * 回放控制器方法
+ */
+export interface ReplayController {
+  /** 播放 */
+  play(): void
+  /** 暂停 */
+  pause(): void
+  /** 停止 */
+  stop(): void
+  /** 跳转到指定时间 */
+  seek(time: number): void
+  /** 设置播放速度 */
+  setSpeed(speed: number): void
+  /** 获取当前状态 */
+  getState(): ReplayState
+  /** 获取当前时间 */
+  getCurrentTime(): number
+  /** 获取总时长 */
+  getTotalDuration(): number
+  /** 获取当前进度（0-1） */
+  getProgress(): number
 }
