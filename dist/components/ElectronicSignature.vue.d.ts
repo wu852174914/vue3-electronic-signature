@@ -48,8 +48,8 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     "replay-speed-change": (speed: number) => void;
     "replay-complete": () => void;
     "replay-progress": (progress: number, currentTime: number) => void;
-    "replay-path-start": (pathIndex: number, path: SignaturePath) => void;
     "replay-path-end": (pathIndex: number, path: SignaturePath) => void;
+    "replay-path-start": (pathIndex: number, path: SignaturePath) => void;
     "signature-start": () => void;
     "signature-drawing": (data: SignatureData) => void;
     "signature-end": (data: SignatureData) => void;
@@ -79,8 +79,8 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     "onReplay-speed-change"?: ((speed: number) => any) | undefined;
     "onReplay-complete"?: (() => any) | undefined;
     "onReplay-progress"?: ((progress: number, currentTime: number) => any) | undefined;
-    "onReplay-path-start"?: ((pathIndex: number, path: SignaturePath) => any) | undefined;
     "onReplay-path-end"?: ((pathIndex: number, path: SignaturePath) => any) | undefined;
+    "onReplay-path-start"?: ((pathIndex: number, path: SignaturePath) => any) | undefined;
     "onSignature-start"?: (() => any) | undefined;
     "onSignature-drawing"?: ((data: SignatureData) => any) | undefined;
     "onSignature-end"?: ((data: SignatureData) => any) | undefined;

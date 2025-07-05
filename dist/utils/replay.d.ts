@@ -73,6 +73,14 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private drawPartialPath;
     /**
+     * 获取指定时间内的所有点
+     */
+    private getPointsUpToTime;
+    /**
+     * 绘制平滑曲线，与原始绘制保持一致
+     */
+    private drawSmoothCurve;
+    /**
      * 清除画布
      */
     private clearCanvas;

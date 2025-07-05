@@ -207,7 +207,7 @@ export class SignatureReplayController implements ReplayController {
 
     this.clearCanvas()
 
-    let currentPathIndex = -1
+    let hasActiveStroke = false
 
     for (let i = 0; i < this.replayData.paths.length; i++) {
       const path = this.replayData.paths[i]
@@ -222,30 +222,25 @@ export class SignatureReplayController implements ReplayController {
       if (time >= pathEndTime) {
         // 这个笔画已经完成，完整绘制
         this.drawCompletePath(path)
+
+        // 检查是否刚刚完成这个笔画
+        if (!hasActiveStroke && Math.abs(time - pathEndTime) < 32) { // 约2帧的容差
+          this.emit('replay-path-end', i, path)
+        }
         continue
       }
 
       // 正在绘制这个笔画
-      currentPathIndex = i
-      const pathProgress = (time - pathStartTime) / (pathEndTime - pathStartTime)
-      this.drawPartialPath(path, pathProgress)
+      hasActiveStroke = true
+      const pathProgress = Math.max(0, Math.min(1, (time - pathStartTime) / Math.max(pathEndTime - pathStartTime, 1)))
 
-      // 触发笔画开始事件（只触发一次）
-      if (pathProgress > 0 && pathProgress < 0.1) {
+      // 检查是否刚开始这个笔画
+      if (pathProgress > 0 && Math.abs(time - pathStartTime) < 32) { // 约2帧的容差
         this.emit('replay-path-start', i, path)
       }
 
+      this.drawPartialPath(path, pathProgress)
       break
-    }
-
-    // 检查是否有笔画刚刚结束
-    if (currentPathIndex >= 0) {
-      const path = this.replayData.paths[currentPathIndex]
-      const pathEndTime = path.endTime || (path.startTime || 0) + (path.duration || 0)
-      
-      if (Math.abs(time - pathEndTime) < 50) { // 50ms容差
-        this.emit('replay-path-end', currentPathIndex, path)
-      }
     }
   }
 
@@ -276,10 +271,15 @@ export class SignatureReplayController implements ReplayController {
   private drawPartialPath(path: SignaturePath, progress: number): void {
     if (path.points.length < 2) return
 
-    const totalPoints = path.points.length
-    const targetPointIndex = Math.floor(totalPoints * progress)
-    
-    if (targetPointIndex < 1) return
+    // 基于时间而不是点数来计算进度
+    const pathStartTime = path.startTime || 0
+    const pathDuration = path.duration || 0
+    const currentPathTime = pathStartTime + pathDuration * progress
+
+    // 找到当前时间对应的点
+    const visiblePoints = this.getPointsUpToTime(path.points, pathStartTime, currentPathTime)
+
+    if (visiblePoints.length < 2) return
 
     this.ctx.beginPath()
     this.ctx.strokeStyle = path.strokeColor
@@ -287,25 +287,78 @@ export class SignatureReplayController implements ReplayController {
     this.ctx.lineCap = 'round'
     this.ctx.lineJoin = 'round'
 
-    this.ctx.moveTo(path.points[0].x, path.points[0].y)
-    
-    for (let i = 1; i <= targetPointIndex; i++) {
-      this.ctx.lineTo(path.points[i].x, path.points[i].y)
-    }
-
-    // 如果进度在两个点之间，插值绘制
-    if (progress < 1 && targetPointIndex < totalPoints - 1) {
-      const pointProgress = (totalPoints * progress) - targetPointIndex
-      const currentPoint = path.points[targetPointIndex]
-      const nextPoint = path.points[targetPointIndex + 1]
-      
-      const interpolatedX = currentPoint.x + (nextPoint.x - currentPoint.x) * pointProgress
-      const interpolatedY = currentPoint.y + (nextPoint.y - currentPoint.y) * pointProgress
-      
-      this.ctx.lineTo(interpolatedX, interpolatedY)
-    }
-
+    // 使用平滑曲线绘制，保持与原始绘制的一致性
+    this.drawSmoothCurve(visiblePoints)
     this.ctx.stroke()
+  }
+
+  /**
+   * 获取指定时间内的所有点
+   */
+  private getPointsUpToTime(points: SignaturePoint[], pathStartTime: number, currentTime: number): SignaturePoint[] {
+    const visiblePoints: SignaturePoint[] = []
+
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i]
+      const pointTime = pathStartTime + (point.relativeTime || i * 50) // 使用相对时间或估算时间
+
+      if (pointTime <= currentTime) {
+        visiblePoints.push(point)
+      } else {
+        // 如果当前时间在两个点之间，进行时间插值
+        if (i > 0) {
+          const prevPoint = points[i - 1]
+          const prevPointTime = pathStartTime + (prevPoint.relativeTime || (i - 1) * 50)
+
+          if (prevPointTime <= currentTime) {
+            const timeProgress = (currentTime - prevPointTime) / (pointTime - prevPointTime)
+            const interpolatedPoint: SignaturePoint = {
+              x: prevPoint.x + (point.x - prevPoint.x) * timeProgress,
+              y: prevPoint.y + (point.y - prevPoint.y) * timeProgress,
+              time: currentTime,
+              pressure: prevPoint.pressure ?
+                prevPoint.pressure + (point.pressure || prevPoint.pressure - prevPoint.pressure) * timeProgress :
+                point.pressure
+            }
+            visiblePoints.push(interpolatedPoint)
+          }
+        }
+        break
+      }
+    }
+
+    return visiblePoints
+  }
+
+  /**
+   * 绘制平滑曲线，与原始绘制保持一致
+   */
+  private drawSmoothCurve(points: SignaturePoint[]): void {
+    if (points.length < 2) return
+
+    this.ctx.moveTo(points[0].x, points[0].y)
+
+    if (points.length === 2) {
+      this.ctx.lineTo(points[1].x, points[1].y)
+      return
+    }
+
+    // 使用二次贝塞尔曲线进行平滑绘制
+    for (let i = 1; i < points.length - 1; i++) {
+      const currentPoint = points[i]
+      const nextPoint = points[i + 1]
+
+      // 计算控制点
+      const controlX = (currentPoint.x + nextPoint.x) / 2
+      const controlY = (currentPoint.y + nextPoint.y) / 2
+
+      this.ctx.quadraticCurveTo(currentPoint.x, currentPoint.y, controlX, controlY)
+    }
+
+    // 绘制最后一段
+    const lastPoint = points[points.length - 1]
+    const secondLastPoint = points[points.length - 2]
+    this.ctx.quadraticCurveTo(secondLastPoint.x, secondLastPoint.y, lastPoint.x, lastPoint.y)
   }
 
   /**
@@ -367,17 +420,53 @@ export class SignatureReplayController implements ReplayController {
  */
 export function createReplayData(signatureData: SignatureData): SignatureReplay {
   const paths = signatureData.paths.map((path, index) => {
-    // 计算路径的时间信息
-    const points = path.points.map((point, pointIndex) => ({
-      ...point,
-      relativeTime: pointIndex * 50 // 假设每个点间隔50ms
-    }))
+    // 使用实际的时间戳信息，如果没有则基于距离和速度估算
+    const points = path.points.map((point, pointIndex) => {
+      let relativeTime: number
 
-    const startTime = index > 0 ? 
-      signatureData.paths[index - 1].endTime! + 200 : // 笔画间200ms间隔
+      if (point.time && path.points[0].time) {
+        // 使用实际时间戳
+        relativeTime = point.time - path.points[0].time
+      } else {
+        // 基于点间距离估算时间
+        if (pointIndex === 0) {
+          relativeTime = 0
+        } else {
+          const prevPoint = path.points[pointIndex - 1]
+          const distance = Math.sqrt(
+            Math.pow(point.x - prevPoint.x, 2) +
+            Math.pow(point.y - prevPoint.y, 2)
+          )
+          // 假设平均绘制速度为100像素/秒
+          const estimatedTime = distance / 100 * 1000
+          relativeTime = (points[pointIndex - 1]?.relativeTime || 0) + Math.max(estimatedTime, 16) // 最小16ms间隔
+        }
+      }
+
+      return {
+        ...point,
+        relativeTime
+      }
+    })
+
+    // 计算路径的开始时间
+    let startTime: number
+    if (index === 0) {
+      startTime = 0
+    } else {
+      const prevPath = paths[index - 1]
+      const pauseTime = estimatePauseTime(
+        signatureData.paths[index - 1].points,
+        path.points
+      )
+      startTime = prevPath.endTime! + pauseTime
+    }
+
+    // 计算路径持续时间
+    const duration = points.length > 0 ?
+      points[points.length - 1].relativeTime! :
       0
 
-    const duration = points.length * 50 // 基于点数计算持续时间
     const endTime = startTime + duration
 
     return {
@@ -389,8 +478,8 @@ export function createReplayData(signatureData: SignatureData): SignatureReplay 
     }
   })
 
-  const totalDuration = paths.length > 0 ? 
-    paths[paths.length - 1].endTime! : 
+  const totalDuration = paths.length > 0 ?
+    paths[paths.length - 1].endTime! :
     0
 
   // 计算元数据
@@ -400,17 +489,82 @@ export function createReplayData(signatureData: SignatureData): SignatureReplay 
 
   const averageSpeed = totalDuration > 0 ? totalDistance / (totalDuration / 1000) : 0
 
+  // 计算平均停顿时间
+  const pauseTimes = paths.slice(1).map((path, index) => {
+    const prevPath = paths[index]
+    return path.startTime! - prevPath.endTime!
+  })
+  const averagePauseTime = pauseTimes.length > 0 ?
+    pauseTimes.reduce((sum, time) => sum + time, 0) / pauseTimes.length :
+    0
+
   return {
     paths,
     totalDuration,
     speed: 1,
     metadata: {
-      deviceType: 'touch', // 可以根据实际情况检测
+      deviceType: detectDeviceType(signatureData),
       averageSpeed,
       totalDistance,
-      averagePauseTime: 200
+      averagePauseTime
     }
   }
+}
+
+/**
+ * 估算两个笔画之间的停顿时间
+ */
+function estimatePauseTime(prevPoints: SignaturePoint[], currentPoints: SignaturePoint[]): number {
+  if (prevPoints.length === 0 || currentPoints.length === 0) {
+    return 200 // 默认停顿时间
+  }
+
+  const lastPoint = prevPoints[prevPoints.length - 1]
+  const firstPoint = currentPoints[0]
+
+  // 如果有实际时间戳，使用实际时间差
+  if (lastPoint.time && firstPoint.time) {
+    return Math.max(firstPoint.time - lastPoint.time, 50) // 最小50ms
+  }
+
+  // 基于距离估算停顿时间
+  const distance = Math.sqrt(
+    Math.pow(firstPoint.x - lastPoint.x, 2) +
+    Math.pow(firstPoint.y - lastPoint.y, 2)
+  )
+
+  // 距离越远，停顿时间越长
+  return Math.min(Math.max(distance * 2, 100), 1000) // 100ms到1000ms之间
+}
+
+/**
+ * 检测设备类型
+ */
+function detectDeviceType(signatureData: SignatureData): 'mouse' | 'touch' | 'pen' {
+  // 基于签名特征检测设备类型
+  const totalPoints = signatureData.paths.reduce((sum, path) => sum + path.points.length, 0)
+  const totalPaths = signatureData.paths.length
+
+  if (totalPoints === 0) return 'touch'
+
+  const avgPointsPerPath = totalPoints / totalPaths
+
+  // 触摸设备通常点密度较高
+  if (avgPointsPerPath > 20) {
+    return 'touch'
+  }
+
+  // 鼠标设备点密度较低
+  if (avgPointsPerPath < 10) {
+    return 'mouse'
+  }
+
+  // 检查是否有压感信息
+  const hasPressure = signatureData.paths.some(path =>
+    path.points.some(point => point.pressure !== undefined)
+  )
+
+  return hasPressure ? 'pen' : 'touch'
 }
 
 /**

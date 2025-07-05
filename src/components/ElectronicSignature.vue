@@ -265,29 +265,47 @@ const getCanvasPoint = (clientX: number, clientY: number): SignaturePoint => {
 // 开始绘制
 const startDrawing = (point: SignaturePoint): void => {
   if (!canInteract.value) return
-  
+
   isDrawing.value = true
+
+  // 记录笔画开始时间
+  const startTime = performance.now()
+  const pointWithTime = { ...point, time: startTime }
+
   currentPath.value = {
-    points: [point],
+    points: [pointWithTime],
     strokeColor: props.strokeColor,
-    strokeWidth: props.strokeWidth
+    strokeWidth: props.strokeWidth,
+    startTime,
+    endTime: startTime,
+    duration: 0
   }
-  
+
   emit('signature-start')
 }
 
 // 继续绘制
 const continueDrawing = (point: SignaturePoint): void => {
   if (!isDrawing.value || !currentPath.value || !canInteract.value) return
-  
-  currentPath.value.points.push(point)
-  
+
+  // 添加时间戳信息
+  const currentTime = performance.now()
+  const pointWithTime = { ...point, time: currentTime }
+
+  currentPath.value.points.push(pointWithTime)
+
+  // 更新路径的结束时间和持续时间
+  if (currentPath.value.startTime) {
+    currentPath.value.endTime = currentTime
+    currentPath.value.duration = currentTime - currentPath.value.startTime
+  }
+
   // 实时绘制
   const ctx = getContext()
   if (ctx) {
     drawSmoothPath(ctx, currentPath.value.points, drawOptions.value)
   }
-  
+
   // 更新签名数据
   updateSignatureData()
   emit('signature-drawing', signatureData.value)
@@ -298,6 +316,15 @@ const endDrawing = (): void => {
   if (!isDrawing.value || !currentPath.value) return
 
   isDrawing.value = false
+
+  // 确保路径有正确的时间信息
+  if (currentPath.value.points.length > 0) {
+    const lastPoint = currentPath.value.points[currentPath.value.points.length - 1]
+    if (lastPoint.time && currentPath.value.startTime) {
+      currentPath.value.endTime = lastPoint.time
+      currentPath.value.duration = lastPoint.time - currentPath.value.startTime
+    }
+  }
 
   // 添加路径到签名数据
   signatureData.value.paths.push(currentPath.value)
