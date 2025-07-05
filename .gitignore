@@ -6,7 +6,7 @@ yarn-error.log*
 pnpm-debug.log*
 
 # 构建输出
-dist/
+# dist/ - 注释掉，npm发布需要dist目录
 build/
 *.tgz
 

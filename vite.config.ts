@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => {
       }
     },
     server: {
+      host: '0.0.0.0', // 允许所有网络接口访问
       port: 3000,
       open: true
     }

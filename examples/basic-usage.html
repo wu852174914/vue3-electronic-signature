@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>雅致PDF预览器 - 基础使用示例</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', Arial, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.2em;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .control-group label {
+            font-weight: 500;
+            color: #555;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 4px 15px rgba(240, 147, 251, 0.4);
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+
+        input[type="range"] {
+            width: 150px;
+        }
+
+        .viewer-container {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 600px;
+            position: relative;
+        }
+
+        .viewer {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f8f9fa;
+        }
+
+        .placeholder {
+            text-align: center;
+            color: #999;
+            font-size: 1.2em;
+        }
+
+        .placeholder i {
+            font-size: 4em;
+            margin-bottom: 20px;
+            display: block;
+            opacity: 0.5;
+        }
+
+        .status {
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        .status h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
+        .status-item {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 5px;
+            border-left: 4px solid #667eea;
+        }
+
+        .status-item strong {
+            color: #667eea;
+        }
+
+        .loading {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255,255,255,0.9);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #ffe6e6;
+            color: #d63031;
+            padding: 15px;
+            border-radius: 5px;
+            border-left: 4px solid #d63031;
+            margin-top: 10px;
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .control-group {
+                justify-content: space-between;
+            }
+
+            .viewer-container {
+                height: 400px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎨 雅致PDF预览器</h1>
+        <p>纯手工打造的跨框架PDF预览库 - 基础使用示例</p>
+    </div>
+
+    <div class="container">
+        <div class="controls">
+            <div class="control-group">
+                <label for="fileInput">选择PDF文件:</label>
+                <input type="file" id="fileInput" accept=".pdf" />
+            </div>
+            
+            <div class="control-group">
+                <button class="btn" id="prevBtn" disabled>上一页</button>
+                <span id="pageInfo">- / -</span>
+                <button class="btn" id="nextBtn" disabled>下一页</button>
+            </div>
+            
+            <div class="control-group">
+                <label for="scaleRange">缩放:</label>
+                <input type="range" id="scaleRange" min="0.5" max="3" step="0.1" value="1" disabled />
+                <span id="scaleValue">100%</span>
+            </div>
+            
+            <div class="control-group">
+                <button class="btn btn-secondary" id="fitWidthBtn" disabled>适应宽度</button>
+                <button class="btn btn-secondary" id="fitHeightBtn" disabled>适应高度</button>
+            </div>
+        </div>
+
+        <div class="viewer-container">
+            <div class="viewer" id="viewer">
+                <div class="placeholder">
+                    <i>📄</i>
+                    <p>请选择一个PDF文件开始预览</p>
+                </div>
+            </div>
+            
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>正在加载PDF文档...</p>
+            </div>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="status">
+            <h3>📊 状态信息</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <strong>文档信息:</strong>
+                    <div id="docInfo">未加载</div>
+                </div>
+                <div class="status-item">
+                    <strong>渲染统计:</strong>
+                    <div id="renderStats">-</div>
+                </div>
+                <div class="status-item">
+                    <strong>缓存状态:</strong>
+                    <div id="cacheStats">-</div>
+                </div>
+                <div class="status-item">
+                    <strong>事件统计:</strong>
+                    <div id="eventStats">-</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 这里应该引入编译后的雅致PDF预览器库 -->
+    <script>
+        // 模拟雅致PDF预览器API
+        // 在实际使用中，这里应该是：
+        // import { PDFViewer } from '@elegant-pdf/core';
+        
+        class MockPDFViewer {
+            constructor(options) {
+                this.container = options.container;
+                this.currentPage = 1;
+                this.pageCount = 0;
+                this.scale = 1.0;
+                this.documentLoaded = false;
+                this.listeners = new Map();
+            }
+            
+            async loadDocument(file) {
+                // 模拟加载过程
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                this.documentLoaded = true;
+                this.pageCount = Math.floor(Math.random() * 20) + 1;
+                this.currentPage = 1;
+                
+                this.emit('documentLoaded', {
+                    pageCount: this.pageCount,
+                    title: file.name,
+                    author: '示例作者',
+                });
+                
+                this.renderPage();
+            }
+            
+            renderPage() {
+                // 模拟渲染
+                this.container.innerHTML = `
+                    <div style="
+                        width: 100%;
+                        height: 100%;
+                        background: white;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 2em;
+                        color: #667eea;
+                        border: 2px dashed #ddd;
+                    ">
+                        📄 第 ${this.currentPage} 页 / 共 ${this.pageCount} 页<br>
+                        <small style="font-size: 0.5em; margin-top: 10px;">
+                            缩放: ${Math.round(this.scale * 100)}%
+                        </small>
+                    </div>
+                `;
+                
+                this.emit('pageRendered', {
+                    pageNumber: this.currentPage,
+                    scale: this.scale,
+                });
+            }
+            
+            goToPage(pageNumber) {
+                if (pageNumber >= 1 && pageNumber <= this.pageCount) {
+                    this.currentPage = pageNumber;
+                    this.renderPage();
+                    this.emit('pageChanged', { pageNumber });
+                }
+            }
+            
+            setScale(scale) {
+                this.scale = scale;
+                this.renderPage();
+                this.emit('scaleChanged', { scale });
+            }
+            
+            addEventListener(event, listener) {
+                if (!this.listeners.has(event)) {
+                    this.listeners.set(event, []);
+                }
+                this.listeners.get(event).push(listener);
+            }
+            
+            emit(event, data) {
+                const listeners = this.listeners.get(event) || [];
+                listeners.forEach(listener => listener(data));
+            }
+            
+            getStats() {
+                return {
+                    cache: { hitRate: Math.random(), itemCount: Math.floor(Math.random() * 10) },
+                    render: { renderTime: Math.floor(Math.random() * 100) },
+                    events: { emitCount: Math.floor(Math.random() * 50) },
+                };
+            }
+        }
+
+        // 应用逻辑
+        class PDFViewerApp {
+            constructor() {
+                this.viewer = null;
+                this.initializeElements();
+                this.bindEvents();
+            }
+            
+            initializeElements() {
+                this.fileInput = document.getElementById('fileInput');
+                this.prevBtn = document.getElementById('prevBtn');
+                this.nextBtn = document.getElementById('nextBtn');
+                this.pageInfo = document.getElementById('pageInfo');
+                this.scaleRange = document.getElementById('scaleRange');
+                this.scaleValue = document.getElementById('scaleValue');
+                this.fitWidthBtn = document.getElementById('fitWidthBtn');
+                this.fitHeightBtn = document.getElementById('fitHeightBtn');
+                this.viewerContainer = document.getElementById('viewer');
+                this.loading = document.getElementById('loading');
+                this.error = document.getElementById('error');
+                this.docInfo = document.getElementById('docInfo');
+                this.renderStats = document.getElementById('renderStats');
+                this.cacheStats = document.getElementById('cacheStats');
+                this.eventStats = document.getElementById('eventStats');
+            }
+            
+            bindEvents() {
+                this.fileInput.addEventListener('change', (e) => this.handleFileSelect(e));
+                this.prevBtn.addEventListener('click', () => this.previousPage());
+                this.nextBtn.addEventListener('click', () => this.nextPage());
+                this.scaleRange.addEventListener('input', (e) => this.handleScaleChange(e));
+                this.fitWidthBtn.addEventListener('click', () => this.fitWidth());
+                this.fitHeightBtn.addEventListener('click', () => this.fitHeight());
+            }
+            
+            async handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                this.showLoading(true);
+                this.hideError();
+                
+                try {
+                    // 创建PDF查看器实例
+                    this.viewer = new MockPDFViewer({
+                        container: this.viewerContainer,
+                    });
+                    
+                    // 设置事件监听
+                    this.setupViewerEvents();
+                    
+                    // 加载文档
+                    await this.viewer.loadDocument(file);
+                    
+                    this.enableControls();
+                    
+                } catch (error) {
+                    this.showError('加载PDF文件失败: ' + error.message);
+                } finally {
+                    this.showLoading(false);
+                }
+            }
+            
+            setupViewerEvents() {
+                this.viewer.addEventListener('documentLoaded', (data) => {
+                    this.updatePageInfo();
+                    this.updateDocInfo(data);
+                    this.updateStats();
+                });
+                
+                this.viewer.addEventListener('pageChanged', () => {
+                    this.updatePageInfo();
+                    this.updateStats();
+                });
+                
+                this.viewer.addEventListener('scaleChanged', () => {
+                    this.updateScaleDisplay();
+                    this.updateStats();
+                });
+                
+                this.viewer.addEventListener('pageRendered', () => {
+                    this.updateStats();
+                });
+            }
+            
+            previousPage() {
+                if (this.viewer && this.viewer.currentPage > 1) {
+                    this.viewer.goToPage(this.viewer.currentPage - 1);
+                }
+            }
+            
+            nextPage() {
+                if (this.viewer && this.viewer.currentPage < this.viewer.pageCount) {
+                    this.viewer.goToPage(this.viewer.currentPage + 1);
+                }
+            }
+            
+            handleScaleChange(event) {
+                const scale = parseFloat(event.target.value);
+                if (this.viewer) {
+                    this.viewer.setScale(scale);
+                }
+            }
+            
+            fitWidth() {
+                if (this.viewer) {
+                    this.viewer.setScale(1.2); // 模拟适应宽度
+                    this.scaleRange.value = 1.2;
+                }
+            }
+            
+            fitHeight() {
+                if (this.viewer) {
+                    this.viewer.setScale(0.8); // 模拟适应高度
+                    this.scaleRange.value = 0.8;
+                }
+            }
+            
+            updatePageInfo() {
+                if (this.viewer) {
+                    this.pageInfo.textContent = `${this.viewer.currentPage} / ${this.viewer.pageCount}`;
+                    this.prevBtn.disabled = this.viewer.currentPage <= 1;
+                    this.nextBtn.disabled = this.viewer.currentPage >= this.viewer.pageCount;
+                }
+            }
+            
+            updateScaleDisplay() {
+                if (this.viewer) {
+                    const percentage = Math.round(this.viewer.scale * 100);
+                    this.scaleValue.textContent = `${percentage}%`;
+                    this.scaleRange.value = this.viewer.scale;
+                }
+            }
+            
+            updateDocInfo(data) {
+                this.docInfo.innerHTML = `
+                    <div>页数: ${data.pageCount}</div>
+                    <div>标题: ${data.title}</div>
+                    <div>作者: ${data.author}</div>
+                `;
+            }
+            
+            updateStats() {
+                if (this.viewer) {
+                    const stats = this.viewer.getStats();
+                    
+                    this.renderStats.innerHTML = `
+                        <div>渲染时间: ${stats.render.renderTime}ms</div>
+                    `;
+                    
+                    this.cacheStats.innerHTML = `
+                        <div>命中率: ${Math.round(stats.cache.hitRate * 100)}%</div>
+                        <div>缓存项: ${stats.cache.itemCount}</div>
+                    `;
+                    
+                    this.eventStats.innerHTML = `
+                        <div>事件数: ${stats.events.emitCount}</div>
+                    `;
+                }
+            }
+            
+            enableControls() {
+                this.prevBtn.disabled = false;
+                this.nextBtn.disabled = false;
+                this.scaleRange.disabled = false;
+                this.fitWidthBtn.disabled = false;
+                this.fitHeightBtn.disabled = false;
+            }
+            
+            showLoading(show) {
+                this.loading.style.display = show ? 'block' : 'none';
+            }
+            
+            showError(message) {
+                this.error.textContent = message;
+                this.error.style.display = 'block';
+            }
+            
+            hideError() {
+                this.error.style.display = 'none';
+            }
+        }
+
+        // 启动应用
+        document.addEventListener('DOMContentLoaded', () => {
+            new PDFViewerApp();
+        });
+    </script>
+</body>
+</html>
