@@ -28,8 +28,11 @@ export class SignatureReplayController implements ReplayController {
   private eventCallbacks: Map<string, Function[]> = new Map()
 
   // 性能优化相关
-  private offscreenCanvas: HTMLCanvasElement | null = null
-  private offscreenCtx: CanvasRenderingContext2D | null = null
+  private offscreenCanvas: HTMLCanvasElement | OffscreenCanvas | null = null
+  private offscreenCtx: CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D | null = null
+  private lastFrameImageBitmap: ImageBitmap | null = null
+  private renderThrottle: number = 0
+  private isRendering: boolean = false
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -41,10 +44,40 @@ export class SignatureReplayController implements ReplayController {
    * 初始化离屏画布用于性能优化
    */
   private initializeOffscreenCanvas(): void {
-    this.offscreenCanvas = document.createElement('canvas')
-    this.offscreenCanvas.width = this.canvas.width
-    this.offscreenCanvas.height = this.canvas.height
-    this.offscreenCtx = this.offscreenCanvas.getContext('2d')!
+    try {
+      // 尝试使用OffscreenCanvas（更高性能）
+      if (typeof OffscreenCanvas !== 'undefined') {
+        this.offscreenCanvas = new OffscreenCanvas(this.canvas.width, this.canvas.height)
+        this.offscreenCtx = this.offscreenCanvas.getContext('2d')!
+      } else {
+        // 回退到普通Canvas
+        this.offscreenCanvas = document.createElement('canvas')
+        this.offscreenCanvas.width = this.canvas.width
+        this.offscreenCanvas.height = this.canvas.height
+        this.offscreenCtx = this.offscreenCanvas.getContext('2d')!
+      }
+
+      // 优化Canvas设置
+      if (this.offscreenCtx) {
+        // 设置高质量渲染
+        this.offscreenCtx.imageSmoothingEnabled = true
+        this.offscreenCtx.imageSmoothingQuality = 'high'
+
+        // 优化文本渲染（如果支持）
+        try {
+          (this.offscreenCtx as any).textRenderingOptimization = 'optimizeSpeed'
+        } catch (e) {
+          // 忽略不支持的属性
+        }
+      }
+    } catch (error) {
+      console.warn('Failed to initialize optimized offscreen canvas:', error)
+      // 最基本的回退方案
+      this.offscreenCanvas = document.createElement('canvas')
+      this.offscreenCanvas.width = this.canvas.width
+      this.offscreenCanvas.height = this.canvas.height
+      this.offscreenCtx = this.offscreenCanvas.getContext('2d')!
+    }
   }
 
   /**
@@ -261,17 +294,55 @@ export class SignatureReplayController implements ReplayController {
   }
 
   /**
-   * 渲染指定时间的帧 - 双缓冲技术，完全消除闪烁
+   * 渲染指定时间的帧 - 高性能优化版本
    */
   private renderFrame(time: number): void {
     if (!this.replayData || !this.offscreenCanvas || !this.offscreenCtx) return
 
-    // 在离屏画布上绘制完整帧
-    this.renderToOffscreenCanvas(time)
+    // 渲染节流：避免过于频繁的重绘
+    const now = performance.now()
+    if (now - this.renderThrottle < 16) { // 限制在60fps
+      return
+    }
+    this.renderThrottle = now
 
-    // 一次性将离屏画布内容复制到主画布
-    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
-    this.ctx.drawImage(this.offscreenCanvas, 0, 0)
+    // 防止重复渲染
+    if (this.isRendering) return
+    this.isRendering = true
+
+    try {
+      // 在离屏画布上绘制完整帧
+      this.renderToOffscreenCanvas(time)
+
+      // 使用高效的图像传输方法
+      this.transferToMainCanvasSync()
+    } finally {
+      this.isRendering = false
+    }
+  }
+
+  /**
+   * 高效地将离屏画布内容传输到主画布（同步版本）
+   */
+  private transferToMainCanvasSync(): void {
+    if (!this.offscreenCanvas) return
+
+    try {
+      // 使用优化的Canvas设置
+      this.ctx.imageSmoothingEnabled = false // 禁用平滑以提高性能
+
+      // 避免clearRect，直接覆盖绘制
+      this.ctx.globalCompositeOperation = 'copy' // 直接替换像素
+      this.ctx.drawImage(this.offscreenCanvas as HTMLCanvasElement, 0, 0)
+      this.ctx.globalCompositeOperation = 'source-over' // 恢复默认混合模式
+
+      // 恢复平滑设置
+      this.ctx.imageSmoothingEnabled = true
+    } catch (error) {
+      // 如果优化方法失败，使用传统方法
+      this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+      this.ctx.drawImage(this.offscreenCanvas as HTMLCanvasElement, 0, 0)
+    }
   }
 
   /**
@@ -280,8 +351,15 @@ export class SignatureReplayController implements ReplayController {
   private renderToOffscreenCanvas(time: number): void {
     if (!this.replayData || !this.offscreenCtx) return
 
-    // 清除离屏画布
-    this.offscreenCtx.clearRect(0, 0, this.offscreenCanvas!.width, this.offscreenCanvas!.height)
+    // 高效清除离屏画布
+    const canvas = this.offscreenCanvas!
+    const ctx = this.offscreenCtx!
+
+    // 使用最快的清除方法
+    ctx.globalCompositeOperation = 'copy'
+    ctx.fillStyle = 'transparent'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    ctx.globalCompositeOperation = 'source-over'
 
     // 设置背景（如果需要）
     // 注意：这里暂时注释掉背景设置，因为ReplayOptions中没有backgroundColor属性
@@ -666,7 +744,7 @@ export class SignatureReplayController implements ReplayController {
 
     // 临时切换绘制上下文
     const originalCtx = this.ctx
-    this.ctx = this.offscreenCtx
+    this.ctx = this.offscreenCtx as CanvasRenderingContext2D
 
     // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
     const penStyle = path.penStyle || this.options.penStyle || 'pen'
@@ -694,7 +772,7 @@ export class SignatureReplayController implements ReplayController {
 
     // 临时切换绘制上下文
     const originalCtx = this.ctx
-    this.ctx = this.offscreenCtx
+    this.ctx = this.offscreenCtx as CanvasRenderingContext2D
 
     // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
     const penStyle = path.penStyle || this.options.penStyle || 'pen'
@@ -711,6 +789,12 @@ export class SignatureReplayController implements ReplayController {
     this.stop()
     this.eventCallbacks.clear()
     this.replayData = null
+
+    // 清理ImageBitmap资源
+    if (this.lastFrameImageBitmap) {
+      this.lastFrameImageBitmap.close()
+      this.lastFrameImageBitmap = null
+    }
   }
 }
 

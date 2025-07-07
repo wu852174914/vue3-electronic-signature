@@ -17,6 +17,9 @@ export declare class SignatureReplayController implements ReplayController {
     private eventCallbacks;
     private offscreenCanvas;
     private offscreenCtx;
+    private lastFrameImageBitmap;
+    private renderThrottle;
+    private isRendering;
     constructor(canvas: HTMLCanvasElement);
     /**
      * 初始化离屏画布用于性能优化
@@ -71,9 +74,13 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private animate;
     /**
-     * 渲染指定时间的帧 - 双缓冲技术，完全消除闪烁
+     * 渲染指定时间的帧 - 高性能优化版本
      */
     private renderFrame;
+    /**
+     * 高效地将离屏画布内容传输到主画布（同步版本）
+     */
+    private transferToMainCanvasSync;
     /**
      * 在离屏画布上渲染完整帧
      */
