@@ -382,7 +382,7 @@ const calculateDynamicStrokeWidth = (point: SignaturePoint, prevPoint: Signature
 }
 
 // 根据笔迹样式绘制线段
-const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[], penStyle: PenStyle): void => {
+const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[], penStyle: PenStyle, isRealTime = false): void => {
   if (points.length < 2) return
 
   ctx.strokeStyle = currentPath.value?.strokeColor || drawOptions.value.strokeColor
@@ -560,7 +560,7 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
 
     case 'elegant':
       // 优雅笔：平滑渐变，由粗到细的连笔之美
-      drawElegantStroke(ctx, points)
+      drawElegantStroke(ctx, points, isRealTime)
       break
   }
 }
@@ -574,9 +574,15 @@ const drawRealTimeConsistentPath = (): void => {
 
   const penStyle = currentPath.value.penStyle || props.penStyle || 'pen'
 
-  // 毛笔样式特殊处理：避免闪烁，只绘制新增部分
+  // 特殊笔迹样式处理：避免闪烁，只绘制新增部分
   if (penStyle === 'brush') {
     drawStableBrushIncrement()
+    return
+  }
+
+  // 圆珠笔样式特殊处理：避免闪烁，使用稳定增量绘制
+  if (penStyle === 'ballpoint') {
+    drawStableBallpointIncrement()
     return
   }
 
@@ -611,7 +617,26 @@ const drawStableBrushIncrement = (): void => {
   if (pointCount >= 2) {
     const recentPoints = points.slice(-3) // 取最近3个点确保连续性
     if (recentPoints.length >= 2) {
-      drawStyledStroke(ctx, recentPoints, 'brush')
+      drawStyledStroke(ctx, recentPoints, 'brush', true) // 实时绘制
+    }
+  }
+}
+
+// 稳定的圆珠笔增量绘制 - 基于Vue3-Signature-Pad技术，避免闪烁
+const drawStableBallpointIncrement = (): void => {
+  if (!currentPath.value || currentPath.value.points.length < 2) return
+
+  const ctx = getContext()
+  if (!ctx) return
+
+  const points = currentPath.value.points
+  const pointCount = points.length
+
+  // 只绘制最新的线段，避免重绘已有笔迹
+  if (pointCount >= 2) {
+    const recentPoints = points.slice(-3) // 取最近3个点确保连续性
+    if (recentPoints.length >= 2) {
+      drawStyledStroke(ctx, recentPoints, 'ballpoint', true) // 实时绘制
     }
   }
 }
@@ -629,16 +654,16 @@ const drawIncrementalPath = (): void => {
 
   if (pointCount === 2) {
     // 第一条线段
-    drawStyledStroke(ctx, points, penStyle)
+    drawStyledStroke(ctx, points, penStyle, true) // 实时绘制
   } else if (pointCount >= 3) {
     // 只绘制最新的线段
     const recentPoints = points.slice(-3)
-    drawStyledStroke(ctx, recentPoints, penStyle)
+    drawStyledStroke(ctx, recentPoints, penStyle, true) // 实时绘制
   }
 }
 
 // 绘制优雅笔迹 - 基于Fabric.js和Vue3-Signature-Pad的速度压力感应技术
-const drawElegantStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[]): void => {
+const drawElegantStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[], isRealTime = false): void => {
   if (points.length < 2) return
 
   ctx.strokeStyle = currentPath.value?.strokeColor || drawOptions.value.strokeColor
@@ -654,8 +679,10 @@ const drawElegantStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint
   // 使用Fabric.js的平滑路径技术绘制连续渐变
   drawVelocityBasedPath(ctx, processedPoints)
 
-  // 添加连笔的优美效果 - 只对优雅笔迹添加连接效果
-  addVelocityBasedConnections(ctx, processedPoints)
+  // 连接点只在最终绘制时添加，实时绘制时不添加避免闪烁
+  if (!isRealTime) {
+    addVelocityBasedConnections(ctx, processedPoints)
+  }
 }
 
 // 预处理点数据，计算速度和动态线宽 - 基于Vue3-Signature-Pad算法
