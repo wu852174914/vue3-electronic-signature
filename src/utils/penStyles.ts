@@ -77,6 +77,21 @@ export const PEN_STYLE_CONFIGS: Record<PenStyle, PenStyleConfig> = {
     lineCap: 'round',
     lineJoin: 'round',
     recommendedColor: '#1e3a8a'
+  },
+
+  elegant: {
+    name: '优雅笔',
+    description: '适中线条，由粗到细的渐变之美，连笔流畅',
+    strokeWidth: 3,
+    smoothing: true,
+    pressure: {
+      enabled: true,
+      min: 0.4,
+      max: 2.5
+    },
+    lineCap: 'round',
+    lineJoin: 'round',
+    recommendedColor: '#374151'
   }
 }
 

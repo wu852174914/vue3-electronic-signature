@@ -188,7 +188,7 @@ export type TouchEventType = 'start' | 'move' | 'end'
 /**
  * 笔迹样式类型
  */
-export type PenStyle = 'pen' | 'brush' | 'marker' | 'pencil' | 'ballpoint'
+export type PenStyle = 'pen' | 'brush' | 'marker' | 'pencil' | 'ballpoint' | 'elegant'
 
 /**
  * 笔迹样式配置

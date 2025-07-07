@@ -104,6 +104,22 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private drawStyledStrokeForReplay;
     /**
+     * 绘制优雅笔迹 - 基于Paper.js技术的平滑渐变效果
+     */
+    private drawElegantStroke;
+    /**
+     * 绘制优雅笔迹的单个线段 - 基于Paper.js的渐变技术
+     */
+    private drawElegantSegment;
+    /**
+     * 添加连笔的优美效果 - 基于Paper.js的平滑连接技术
+     */
+    private addElegantConnections;
+    /**
+     * 平滑插值函数 - 基于Paper.js的平滑算法
+     */
+    private smoothStep;
+    /**
      * 获取控制点（用于贝塞尔曲线平滑） - 与signature.ts中的实现一致
      */
     private getControlPoint;

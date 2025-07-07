@@ -515,6 +515,24 @@ export class SignatureReplayController implements ReplayController {
         const ballpointPressure = point.pressure || 0.5
         return baseWidth * (0.8 + ballpointPressure * 0.4)
 
+      case 'elegant':
+        // 优雅笔：基于速度和压力的动态变化，实现由粗到细的渐变
+        const elegantPressure = point.pressure || 0.5
+
+        // 计算速度因子（基于与前一个点的距离和时间差）
+        let speedFactor = 1.0
+        if (prevPoint) {
+          const distance = Math.sqrt(Math.pow(point.x - prevPoint.x, 2) + Math.pow(point.y - prevPoint.y, 2))
+          const timeDiff = Math.max(1, (point.time || 0) - (prevPoint.time || 0))
+          const speed = distance / timeDiff
+          // 速度越快线条越细，速度越慢线条越粗
+          speedFactor = Math.max(0.3, Math.min(2.0, 50 / Math.max(speed, 1)))
+        }
+
+        // 结合压力和速度，创造优美的渐变效果
+        const dynamicFactor = elegantPressure * speedFactor
+        return baseWidth * (0.4 + dynamicFactor * 1.6)
+
       default:
         return baseWidth
     }
@@ -702,7 +720,143 @@ export class SignatureReplayController implements ReplayController {
         }
         this.ctx.globalAlpha = 1.0
         break
+
+      case 'elegant':
+        // 优雅笔：平滑渐变，由粗到细的连笔之美
+        this.drawElegantStroke(points, strokeColor, strokeWidth)
+        break
     }
+  }
+
+  /**
+   * 绘制优雅笔迹 - 基于Paper.js技术的平滑渐变效果
+   */
+  private drawElegantStroke(points: SignaturePoint[], strokeColor: string, strokeWidth: number): void {
+    if (points.length < 2) return
+
+    this.ctx.strokeStyle = strokeColor
+    this.ctx.fillStyle = strokeColor
+    this.ctx.lineCap = 'round'
+    this.ctx.lineJoin = 'round'
+    this.ctx.globalCompositeOperation = 'source-over'
+
+    // 基于Paper.js的平滑路径技术
+    // 使用多段贝塞尔曲线创建流畅的渐变效果
+    for (let i = 1; i < points.length; i++) {
+      const currentPoint = points[i]
+      const prevPoint = points[i - 1]
+
+      // 计算动态线宽
+      const currentWidth = this.calculateDynamicStrokeWidth(currentPoint, prevPoint, 'elegant', strokeWidth)
+      const prevWidth = i > 1 ?
+        this.calculateDynamicStrokeWidth(prevPoint, points[i - 2], 'elegant', strokeWidth) :
+        currentWidth
+
+      // 创建渐变路径 - 基于Paper.js的DrippingBrush技术
+      this.drawElegantSegment(prevPoint, currentPoint, prevWidth, currentWidth)
+    }
+
+    // 添加连笔的优美效果 - 基于Paper.js的平滑技术
+    this.addElegantConnections(points, strokeWidth)
+  }
+
+  /**
+   * 绘制优雅笔迹的单个线段 - 基于Paper.js的渐变技术
+   */
+  private drawElegantSegment(
+    startPoint: SignaturePoint,
+    endPoint: SignaturePoint,
+    startWidth: number,
+    endWidth: number
+  ): void {
+    // 基于Paper.js的DrippingBrush算法
+    // 创建由粗到细的渐变效果
+    const steps = Math.max(3, Math.floor(Math.sqrt(
+      Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2)
+    ) / 2))
+
+    this.ctx.beginPath()
+
+    // 创建路径的上下边界点
+    const topPoints: Array<{x: number, y: number}> = []
+    const bottomPoints: Array<{x: number, y: number}> = []
+
+    for (let step = 0; step <= steps; step++) {
+      const t = step / steps
+      const smoothT = this.smoothStep(t) // 使用平滑插值
+
+      // 插值位置
+      const x = startPoint.x + (endPoint.x - startPoint.x) * smoothT
+      const y = startPoint.y + (endPoint.y - startPoint.y) * smoothT
+
+      // 插值宽度（创建渐变效果）
+      const width = startWidth + (endWidth - startWidth) * smoothT
+
+      // 计算垂直向量
+      const dx = endPoint.x - startPoint.x
+      const dy = endPoint.y - startPoint.y
+      const length = Math.sqrt(dx * dx + dy * dy)
+
+      if (length > 0) {
+        const perpX = -dy / length * width / 2
+        const perpY = dx / length * width / 2
+
+        topPoints.push({ x: x + perpX, y: y + perpY })
+        bottomPoints.push({ x: x - perpX, y: y - perpY })
+      }
+    }
+
+    // 绘制填充路径 - 基于Paper.js的路径构建技术
+    if (topPoints.length > 0 && bottomPoints.length > 0) {
+      this.ctx.moveTo(topPoints[0].x, topPoints[0].y)
+
+      // 绘制上边界
+      for (let i = 1; i < topPoints.length; i++) {
+        this.ctx.lineTo(topPoints[i].x, topPoints[i].y)
+      }
+
+      // 绘制下边界（反向）
+      for (let i = bottomPoints.length - 1; i >= 0; i--) {
+        this.ctx.lineTo(bottomPoints[i].x, bottomPoints[i].y)
+      }
+
+      this.ctx.closePath()
+      this.ctx.fill()
+    }
+  }
+
+  /**
+   * 添加连笔的优美效果 - 基于Paper.js的平滑连接技术
+   */
+  private addElegantConnections(points: SignaturePoint[], baseWidth: number): void {
+    // 在连笔处添加平滑的连接效果
+    for (let i = 1; i < points.length - 1; i++) {
+      const prevPoint = points[i - 1]
+      const currentPoint = points[i]
+      const nextPoint = points[i + 1]
+
+      // 计算角度变化
+      const angle1 = Math.atan2(currentPoint.y - prevPoint.y, currentPoint.x - prevPoint.x)
+      const angle2 = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x)
+      const angleDiff = Math.abs(angle2 - angle1)
+
+      // 在转折处添加平滑连接
+      if (angleDiff > 0.3) { // 约17度
+        const connectionWidth = this.calculateDynamicStrokeWidth(currentPoint, prevPoint, 'elegant', baseWidth)
+
+        this.ctx.beginPath()
+        this.ctx.arc(currentPoint.x, currentPoint.y, connectionWidth / 3, 0, Math.PI * 2)
+        this.ctx.fill()
+      }
+    }
+  }
+
+  /**
+   * 平滑插值函数 - 基于Paper.js的平滑算法
+   */
+  private smoothStep(t: number): number {
+    // 使用三次贝塞尔曲线进行平滑插值
+    return t * t * (3 - 2 * t)
   }
 
   /**
