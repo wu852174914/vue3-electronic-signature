@@ -4,9 +4,69 @@ import type { PenStyle, PenStyleConfig } from '../types'
  * 预设的笔迹样式配置
  */
 export const PEN_STYLE_CONFIGS: Record<PenStyle, PenStyleConfig> = {
+  ballpoint: {
+    name: '适中笔迹',
+    description: '连续流畅，简洁专业，商务首选',
+    strokeWidth: 2,
+    smoothing: true,
+    pressure: {
+      enabled: true,
+      min: 1.5,
+      max: 2.5
+    },
+    lineCap: 'round',
+    lineJoin: 'round',
+    recommendedColor: '#374151'
+  },
+
+  elegant: {
+    name: '优雅笔迹',
+    description: '智能渐变，由粗到细，速度感应',
+    strokeWidth: 3,
+    smoothing: true,
+    pressure: {
+      enabled: true,
+      min: 0.3,
+      max: 15
+    },
+    lineCap: 'round',
+    lineJoin: 'round',
+    recommendedColor: '#374151'
+  },
+
+  brush: {
+    name: '毛笔',
+    description: '传统书法，自然变化，文化韵味',
+    strokeWidth: 8,
+    smoothing: true,
+    pressure: {
+      enabled: true,
+      min: 1,
+      max: 20
+    },
+    lineCap: 'round',
+    lineJoin: 'round',
+    recommendedColor: '#2c3e50'
+  },
+
+  pencil: {
+    name: '铅笔',
+    description: '稳定连续，简洁清晰，自然书写',
+    strokeWidth: 3,
+    smoothing: true,
+    pressure: {
+      enabled: true,
+      min: 2,
+      max: 5
+    },
+    lineCap: 'round',
+    lineJoin: 'round',
+    recommendedColor: '#666666'
+  },
+
   pen: {
     name: '钢笔',
-    description: '极细线条，锐利精准，商务签名',
+    description: '极细锐利，精准线条，技术绘图',
     strokeWidth: 1,
     smoothing: true,
     pressure: {
@@ -19,24 +79,9 @@ export const PEN_STYLE_CONFIGS: Record<PenStyle, PenStyleConfig> = {
     recommendedColor: '#000080'
   },
 
-  brush: {
-    name: '毛笔',
-    description: '粗细变化极大，传统书法效果',
-    strokeWidth: 8,
-    smoothing: true,
-    pressure: {
-      enabled: true,
-      min: 1,
-      max: 16
-    },
-    lineCap: 'round',
-    lineJoin: 'round',
-    recommendedColor: '#2c3e50'
-  },
-
   marker: {
     name: '马克笔',
-    description: '超粗线条，荧光笔效果',
+    description: '超粗荧光，醒目标记，重点突出',
     strokeWidth: 12,
     smoothing: false,
     pressure: {
@@ -47,51 +92,6 @@ export const PEN_STYLE_CONFIGS: Record<PenStyle, PenStyleConfig> = {
     lineCap: 'square',
     lineJoin: 'bevel',
     recommendedColor: '#ff6b35'
-  },
-
-  pencil: {
-    name: '铅笔',
-    description: '粗糙纹理，素描效果',
-    strokeWidth: 3,
-    smoothing: false,
-    pressure: {
-      enabled: true,
-      min: 2,
-      max: 5
-    },
-    lineCap: 'round',
-    lineJoin: 'round',
-    recommendedColor: '#666666'
-  },
-
-  ballpoint: {
-    name: '圆珠笔',
-    description: '细线条，轻微断续效果',
-    strokeWidth: 1.2,
-    smoothing: true,
-    pressure: {
-      enabled: true,
-      min: 0.8,
-      max: 1.8
-    },
-    lineCap: 'round',
-    lineJoin: 'round',
-    recommendedColor: '#1e3a8a'
-  },
-
-  elegant: {
-    name: '优雅笔',
-    description: '适中线条，由粗到细的渐变之美，连笔流畅',
-    strokeWidth: 3,
-    smoothing: true,
-    pressure: {
-      enabled: true,
-      min: 0.4,
-      max: 2.5
-    },
-    lineCap: 'round',
-    lineJoin: 'round',
-    recommendedColor: '#374151'
   }
 }
 

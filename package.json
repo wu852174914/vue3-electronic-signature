@@ -1,6 +1,6 @@
 {
   "name": "vue3-electronic-signature",
-  "version": "1.0.1",
+  "version": "2.0.0",
   "description": "一个基于Vue3的电子签名组件库，支持手写签名、触摸绘制和多种导出格式",
   "main": "dist/vue3-electronic-signature.umd.js",
   "module": "dist/vue3-electronic-signature.es.js",
