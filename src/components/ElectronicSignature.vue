@@ -221,6 +221,10 @@ const placeholderStyle = computed(() => ({
 }))
 
 const showPlaceholder = computed(() => {
+  // 回放模式下不显示占位符
+  if (isReplayMode.value) {
+    return false
+  }
   return props.placeholder && isSignatureEmpty(signatureData.value)
 })
 

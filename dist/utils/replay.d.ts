@@ -65,11 +65,11 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private renderFrame;
     /**
-     * 绘制完整路径
+     * 绘制完整路径 - 使用与录制时相同的算法
      */
     private drawCompletePath;
     /**
-     * 绘制部分路径
+     * 绘制部分路径 - 使用与录制时相同的算法
      */
     private drawPartialPath;
     /**
@@ -77,9 +77,13 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private getPointsUpToTime;
     /**
-     * 绘制平滑曲线，与原始绘制保持一致
+     * 使用与录制时相同的平滑算法绘制路径
      */
-    private drawSmoothCurve;
+    private drawPathWithSmoothAlgorithm;
+    /**
+     * 获取控制点（用于贝塞尔曲线平滑） - 与signature.ts中的实现一致
+     */
+    private getControlPoint;
     /**
      * 清除画布
      */

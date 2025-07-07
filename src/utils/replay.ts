@@ -274,28 +274,22 @@ export class SignatureReplayController implements ReplayController {
   }
 
   /**
-   * 绘制完整路径
+   * 绘制完整路径 - 使用与录制时相同的算法
    */
   private drawCompletePath(path: SignaturePath): void {
     if (path.points.length < 2) return
 
-    this.ctx.beginPath()
-    this.ctx.strokeStyle = path.strokeColor
-    this.ctx.lineWidth = path.strokeWidth
-    this.ctx.lineCap = 'round'
-    this.ctx.lineJoin = 'round'
-
-    this.ctx.moveTo(path.points[0].x, path.points[0].y)
-    
-    for (let i = 1; i < path.points.length; i++) {
-      this.ctx.lineTo(path.points[i].x, path.points[i].y)
-    }
-
-    this.ctx.stroke()
+    // 使用与录制时相同的drawSmoothPath算法
+    this.drawPathWithSmoothAlgorithm(path.points, {
+      strokeColor: path.strokeColor,
+      strokeWidth: path.strokeWidth,
+      smoothing: true, // 保持与录制时一致
+      pressure: { enabled: false, min: 1, max: 4 }
+    })
   }
 
   /**
-   * 绘制部分路径
+   * 绘制部分路径 - 使用与录制时相同的算法
    */
   private drawPartialPath(path: SignaturePath, progress: number): void {
     if (path.points.length < 2) return
@@ -310,15 +304,13 @@ export class SignatureReplayController implements ReplayController {
 
     if (visiblePoints.length < 2) return
 
-    this.ctx.beginPath()
-    this.ctx.strokeStyle = path.strokeColor
-    this.ctx.lineWidth = path.strokeWidth
-    this.ctx.lineCap = 'round'
-    this.ctx.lineJoin = 'round'
-
-    // 使用平滑曲线绘制，保持与原始绘制的一致性
-    this.drawSmoothCurve(visiblePoints)
-    this.ctx.stroke()
+    // 使用与录制时相同的drawSmoothPath算法
+    this.drawPathWithSmoothAlgorithm(visiblePoints, {
+      strokeColor: path.strokeColor,
+      strokeWidth: path.strokeWidth,
+      smoothing: true, // 保持与录制时一致
+      pressure: { enabled: false, min: 1, max: 4 }
+    })
   }
 
   /**
@@ -360,34 +352,71 @@ export class SignatureReplayController implements ReplayController {
   }
 
   /**
-   * 绘制平滑曲线，与原始绘制保持一致
+   * 使用与录制时相同的平滑算法绘制路径
    */
-  private drawSmoothCurve(points: SignaturePoint[]): void {
+  private drawPathWithSmoothAlgorithm(points: SignaturePoint[], options: {
+    strokeColor: string
+    strokeWidth: number
+    smoothing: boolean
+    pressure: { enabled: boolean; min: number; max: number }
+  }): void {
     if (points.length < 2) return
 
-    this.ctx.moveTo(points[0].x, points[0].y)
+    this.ctx.strokeStyle = options.strokeColor
+    this.ctx.lineCap = 'round'
+    this.ctx.lineJoin = 'round'
 
-    if (points.length === 2) {
-      this.ctx.lineTo(points[1].x, points[1].y)
+    if (!options.smoothing || points.length < 3) {
+      // 直线绘制
+      this.ctx.beginPath()
+      this.ctx.lineWidth = options.strokeWidth
+      this.ctx.moveTo(points[0].x, points[0].y)
+
+      for (let i = 1; i < points.length; i++) {
+        this.ctx.lineTo(points[i].x, points[i].y)
+      }
+      this.ctx.stroke()
       return
     }
 
-    // 使用二次贝塞尔曲线进行平滑绘制
+    // 平滑曲线绘制 - 与drawSmoothPath完全一致
+    this.ctx.beginPath()
+    this.ctx.moveTo(points[0].x, points[0].y)
+
     for (let i = 1; i < points.length - 1; i++) {
-      const currentPoint = points[i]
-      const nextPoint = points[i + 1]
+      const current = points[i]
+      const next = points[i + 1]
 
-      // 计算控制点
-      const controlX = (currentPoint.x + nextPoint.x) / 2
-      const controlY = (currentPoint.y + nextPoint.y) / 2
+      this.ctx.lineWidth = options.strokeWidth
 
-      this.ctx.quadraticCurveTo(currentPoint.x, currentPoint.y, controlX, controlY)
+      const controlPoint = this.getControlPoint(current, points[i - 1], next)
+      this.ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, current.x, current.y)
     }
 
     // 绘制最后一段
     const lastPoint = points[points.length - 1]
-    const secondLastPoint = points[points.length - 2]
-    this.ctx.quadraticCurveTo(secondLastPoint.x, secondLastPoint.y, lastPoint.x, lastPoint.y)
+    this.ctx.lineTo(lastPoint.x, lastPoint.y)
+    this.ctx.stroke()
+  }
+
+  /**
+   * 获取控制点（用于贝塞尔曲线平滑） - 与signature.ts中的实现一致
+   */
+  private getControlPoint(current: SignaturePoint, previous: SignaturePoint, next: SignaturePoint): SignaturePoint {
+    const smoothing = 0.2
+    const opposedLine = {
+      length: Math.sqrt(Math.pow(next.x - previous.x, 2) + Math.pow(next.y - previous.y, 2)),
+      angle: Math.atan2(next.y - previous.y, next.x - previous.x)
+    }
+
+    const angle = opposedLine.angle + Math.PI
+    const length = opposedLine.length * smoothing
+
+    return {
+      x: current.x + Math.cos(angle) * length,
+      y: current.y + Math.sin(angle) * length,
+      time: current.time || 0
+    }
   }
 
   /**
