@@ -434,13 +434,22 @@ const redrawCanvas = (): void => {
 
 // 回放相关方法
 const initReplayController = (): void => {
-  if (!canvasRef.value) return
+  console.log('初始化回放控制器')
+  console.log('canvas引用是否存在:', !!canvasRef.value)
+
+  if (!canvasRef.value) {
+    console.error('canvas引用不存在，无法初始化回放控制器')
+    return
+  }
 
   if (replayController.value) {
+    console.log('销毁现有回放控制器')
     replayController.value.destroy()
   }
 
+  console.log('创建新的回放控制器')
   replayController.value = new SignatureReplayController(canvasRef.value)
+  console.log('回放控制器创建成功:', !!replayController.value)
 
   // 绑定回放事件
   replayController.value.on('replay-start', () => {
@@ -522,7 +531,20 @@ const getReplayData = (): SignatureReplay | null => {
 
 // 实现ReplayController接口的方法
 const play = (): void => {
-  replayController.value?.play()
+  console.log('play方法被调用')
+  console.log('回放控制器是否存在:', !!replayController.value)
+
+  if (!replayController.value) {
+    console.log('回放控制器不存在，尝试初始化')
+    initReplayController()
+  }
+
+  if (replayController.value) {
+    console.log('调用回放控制器的play方法')
+    replayController.value.play()
+  } else {
+    console.error('回放控制器初始化失败，无法播放')
+  }
 }
 
 const pause = (): void => {
@@ -686,15 +708,24 @@ watch(() => props.replayData, (newData: SignatureReplay | undefined) => {
   console.log('当前回放模式:', props.replayMode)
   console.log('回放控制器是否存在:', !!replayController.value)
 
-  if (newData && props.replayMode && replayController.value) {
-    // 只设置数据，不自动播放
-    console.log('开始设置回放数据到控制器')
-    replayController.value.setReplayData(newData, props.replayOptions || {})
-    console.log('回放数据已更新:', newData)
+  if (newData && props.replayMode) {
+    // 确保回放控制器已初始化
+    if (!replayController.value) {
+      console.log('回放控制器未初始化，先初始化')
+      initReplayController()
+    }
+
+    if (replayController.value) {
+      // 只设置数据，不自动播放
+      console.log('开始设置回放数据到控制器')
+      replayController.value.setReplayData(newData, props.replayOptions || {})
+      console.log('回放数据已更新:', newData)
+    } else {
+      console.error('回放控制器初始化失败')
+    }
   } else {
     if (!newData) console.log('回放数据为空，跳过设置')
     if (!props.replayMode) console.log('不在回放模式，跳过设置')
-    if (!replayController.value) console.log('回放控制器不存在，跳过设置')
   }
 }, { immediate: true })
 

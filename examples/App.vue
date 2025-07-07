@@ -503,10 +503,14 @@ const startReplay = () => {
     replayMode.value = true
   }
 
-  // 等待一下确保数据已经传递
+  // 等待一下确保数据已经传递和回放控制器已初始化
   nextTick(() => {
     console.log('nextTick后调用播放')
-    playbackSignatureRef.value?.play()
+    // 再等一个tick确保所有初始化完成
+    nextTick(() => {
+      console.log('第二个nextTick后调用播放')
+      playbackSignatureRef.value?.play()
+    })
   })
 }
 
