@@ -6,77 +6,77 @@ import type { PenStyle, PenStyleConfig } from '../types'
 export const PEN_STYLE_CONFIGS: Record<PenStyle, PenStyleConfig> = {
   pen: {
     name: '钢笔',
-    description: '细线条，高精度，适合正式签名',
-    strokeWidth: 1.5,
+    description: '极细线条，锐利精准，商务签名',
+    strokeWidth: 1,
     smoothing: true,
     pressure: {
       enabled: false,
       min: 1,
-      max: 2
+      max: 1
     },
-    lineCap: 'round',
-    lineJoin: 'round',
+    lineCap: 'butt',
+    lineJoin: 'miter',
     recommendedColor: '#000080'
   },
-  
+
   brush: {
     name: '毛笔',
-    description: '压感变化，粗细不均，艺术感强',
-    strokeWidth: 4,
+    description: '粗细变化极大，传统书法效果',
+    strokeWidth: 8,
     smoothing: true,
     pressure: {
       enabled: true,
-      min: 2,
-      max: 8
+      min: 1,
+      max: 16
     },
     lineCap: 'round',
     lineJoin: 'round',
     recommendedColor: '#2c3e50'
   },
-  
+
   marker: {
     name: '马克笔',
-    description: '粗线条，均匀宽度，醒目清晰',
-    strokeWidth: 5,
-    smoothing: true,
+    description: '超粗线条，荧光笔效果',
+    strokeWidth: 12,
+    smoothing: false,
     pressure: {
       enabled: false,
-      min: 4,
-      max: 6
+      min: 10,
+      max: 14
     },
-    lineCap: 'round',
-    lineJoin: 'round',
-    recommendedColor: '#e74c3c'
+    lineCap: 'square',
+    lineJoin: 'bevel',
+    recommendedColor: '#ff6b35'
   },
-  
+
   pencil: {
     name: '铅笔',
-    description: '中等粗细，略有纹理，自然感强',
-    strokeWidth: 2,
+    description: '粗糙纹理，素描效果',
+    strokeWidth: 3,
     smoothing: false,
     pressure: {
       enabled: true,
-      min: 1.5,
-      max: 3
+      min: 2,
+      max: 5
     },
     lineCap: 'round',
     lineJoin: 'round',
-    recommendedColor: '#7f8c8d'
+    recommendedColor: '#666666'
   },
-  
+
   ballpoint: {
     name: '圆珠笔',
-    description: '细线条，轻微变化，日常书写',
-    strokeWidth: 1,
+    description: '细线条，轻微断续效果',
+    strokeWidth: 1.2,
     smoothing: true,
     pressure: {
       enabled: true,
       min: 0.8,
-      max: 1.5
+      max: 1.8
     },
     lineCap: 'round',
     lineJoin: 'round',
-    recommendedColor: '#3498db'
+    recommendedColor: '#1e3a8a'
   }
 }
 
