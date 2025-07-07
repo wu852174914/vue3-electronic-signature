@@ -280,7 +280,8 @@ export class SignatureReplayController implements ReplayController {
   private drawCompletePath(path: SignaturePath): void {
     if (path.points.length < 2) return
 
-    const penStyle = this.options.penStyle || 'pen'
+    // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
+    const penStyle = path.penStyle || this.options.penStyle || 'pen'
     this.drawStyledStrokeForReplay(path.points, penStyle, path.strokeColor, path.strokeWidth)
   }
 
@@ -300,7 +301,8 @@ export class SignatureReplayController implements ReplayController {
 
     if (visiblePoints.length < 2) return
 
-    const penStyle = this.options.penStyle || 'pen'
+    // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
+    const penStyle = path.penStyle || this.options.penStyle || 'pen'
     this.drawStyledStrokeForReplay(visiblePoints, penStyle, path.strokeColor, path.strokeWidth)
   }
 

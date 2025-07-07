@@ -306,6 +306,7 @@ const startDrawing = (point: SignaturePoint): void => {
     points: [pointWithTime],
     strokeColor: props.strokeColor,
     strokeWidth: props.strokeWidth,
+    penStyle: props.penStyle, // 保存笔迹样式
     startTime,
     endTime: startTime,
     duration: 0
@@ -584,7 +585,8 @@ const getControlPointForDrawing = (current: SignaturePoint, previous: SignatureP
 const drawPathWithConsistentAlgorithm = (ctx: CanvasRenderingContext2D, path: SignaturePath): void => {
   if (path.points.length < 2) return
 
-  const penStyle = props.penStyle || 'pen'
+  // 优先使用路径中保存的笔迹样式，如果没有则使用当前组件的样式
+  const penStyle = path.penStyle || props.penStyle || 'pen'
 
   // 临时设置当前路径以便drawStyledStroke可以访问颜色
   const originalPath = currentPath.value

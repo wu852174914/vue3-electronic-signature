@@ -64,6 +64,8 @@ export interface SignaturePath {
   strokeColor: string
   /** 画笔粗细 */
   strokeWidth: number
+  /** 笔迹样式 */
+  penStyle?: PenStyle
   /** 笔画开始时间（毫秒） */
   startTime?: number
   /** 笔画结束时间（毫秒） */

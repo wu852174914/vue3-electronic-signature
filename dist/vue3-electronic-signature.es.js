@@ -243,7 +243,7 @@ class ot {
   drawCompletePath(t) {
     if (t.points.length < 2)
       return;
-    const n = this.options.penStyle || "pen";
+    const n = t.penStyle || this.options.penStyle || "pen";
     this.drawStyledStrokeForReplay(t.points, n, t.strokeColor, t.strokeWidth);
   }
   /**
@@ -255,7 +255,7 @@ class ot {
     const a = t.startTime || 0, l = t.duration || 0, s = a + l * n, h = this.getPointsUpToTime(t.points, a, s);
     if (h.length < 2)
       return;
-    const u = this.options.penStyle || "pen";
+    const u = t.penStyle || this.options.penStyle || "pen";
     this.drawStyledStrokeForReplay(h, u, t.strokeColor, t.strokeWidth);
   }
   /**
@@ -728,6 +728,8 @@ const ct = ["width", "height"], dt = {
         points: [p],
         strokeColor: a.strokeColor,
         strokeWidth: a.strokeWidth,
+        penStyle: a.penStyle,
+        // 保存笔迹样式
         startTime: o,
         endTime: o,
         duration: 0
@@ -853,7 +855,7 @@ const ct = ["width", "height"], dt = {
     }, Ie = (e, o) => {
       if (o.points.length < 2)
         return;
-      const p = a.penStyle || "pen", f = u.value;
+      const p = o.penStyle || a.penStyle || "pen", f = u.value;
       u.value = o, U(e, o.points, p), u.value = f;
     }, oe = (e) => {
       if (!h.value || !u.value || !_.value)
@@ -1138,7 +1140,7 @@ const St = (i, t) => {
   for (const [a, l] of t)
     n[a] = l;
   return n;
-}, Pe = /* @__PURE__ */ St(Pt, [["__scopeId", "data-v-4831cb0a"]]);
+}, Pe = /* @__PURE__ */ St(Pt, [["__scopeId", "data-v-37d68792"]]);
 function Dt() {
   return window.devicePixelRatio || 1;
 }
