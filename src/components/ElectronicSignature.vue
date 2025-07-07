@@ -304,11 +304,8 @@ const continueDrawing = (point: SignaturePoint): void => {
     currentPath.value.duration = currentTime - currentPath.value.startTime
   }
 
-  // 实时绘制
-  const ctx = getContext()
-  if (ctx) {
-    drawSmoothPath(ctx, currentPath.value.points, drawOptions.value)
-  }
+  // 实时绘制 - 重新绘制整个画布以避免叠加
+  redrawCanvas()
 
   // 更新签名数据
   updateSignatureData()
@@ -507,7 +504,12 @@ const startReplay = (replayData: SignatureReplay, options?: ReplayOptions): void
 
   if (replayController.value) {
     isReplayMode.value = true
-    replayController.value.setReplayData(replayData, options || {})
+    // 传递当前的绘制选项确保一致性
+    const replayOptionsWithDrawOptions = {
+      ...options,
+      drawOptions: drawOptions.value
+    }
+    replayController.value.setReplayData(replayData, replayOptionsWithDrawOptions)
     console.log('startReplay调用，自动播放:', options?.autoPlay)
 
     if (options?.autoPlay === true) {
@@ -722,7 +724,12 @@ watch(() => props.replayData, (newData: SignatureReplay | undefined) => {
     if (replayController.value) {
       // 只设置数据，不自动播放
       console.log('开始设置回放数据到控制器')
-      replayController.value.setReplayData(newData, props.replayOptions || {})
+      // 传递当前的绘制选项确保一致性
+      const replayOptionsWithDrawOptions = {
+        ...props.replayOptions,
+        drawOptions: drawOptions.value
+      }
+      replayController.value.setReplayData(newData, replayOptionsWithDrawOptions)
       console.log('回放数据已更新:', newData)
     } else {
       console.error('回放控制器初始化失败')

@@ -280,11 +280,17 @@ export class SignatureReplayController implements ReplayController {
     if (path.points.length < 2) return
 
     // 使用与录制时相同的drawSmoothPath算法
-    this.drawPathWithSmoothAlgorithm(path.points, {
+    const drawOptions = this.options.drawOptions || {
       strokeColor: path.strokeColor,
       strokeWidth: path.strokeWidth,
-      smoothing: true, // 保持与录制时一致
+      smoothing: true,
       pressure: { enabled: false, min: 1, max: 4 }
+    }
+
+    this.drawPathWithSmoothAlgorithm(path.points, {
+      ...drawOptions,
+      strokeColor: path.strokeColor, // 保持路径自己的颜色
+      strokeWidth: path.strokeWidth  // 保持路径自己的宽度
     })
   }
 
@@ -305,11 +311,17 @@ export class SignatureReplayController implements ReplayController {
     if (visiblePoints.length < 2) return
 
     // 使用与录制时相同的drawSmoothPath算法
-    this.drawPathWithSmoothAlgorithm(visiblePoints, {
+    const drawOptions = this.options.drawOptions || {
       strokeColor: path.strokeColor,
       strokeWidth: path.strokeWidth,
-      smoothing: true, // 保持与录制时一致
+      smoothing: true,
       pressure: { enabled: false, min: 1, max: 4 }
+    }
+
+    this.drawPathWithSmoothAlgorithm(visiblePoints, {
+      ...drawOptions,
+      strokeColor: path.strokeColor, // 保持路径自己的颜色
+      strokeWidth: path.strokeWidth  // 保持路径自己的宽度
     })
   }
 

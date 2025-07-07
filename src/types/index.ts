@@ -224,6 +224,8 @@ export interface ReplayOptions {
   startTime?: number
   /** 回放结束时间（毫秒） */
   endTime?: number
+  /** 绘制选项（确保回放与录制一致） */
+  drawOptions?: DrawOptions
 }
 
 /**
