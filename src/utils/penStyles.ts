@@ -10,12 +10,12 @@ export const PEN_STYLE_CONFIGS: Record<PenStyle, PenStyleConfig> = {
     strokeWidth: 1,
     smoothing: true,
     pressure: {
-      enabled: false,
+      enabled: true,
       min: 1,
       max: 1
     },
-    lineCap: 'butt',
-    lineJoin: 'miter',
+    lineCap: 'round',
+    lineJoin: 'round',
     recommendedColor: '#000080'
   },
 

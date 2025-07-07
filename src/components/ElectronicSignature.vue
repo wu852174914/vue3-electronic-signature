@@ -337,9 +337,8 @@ const calculateDynamicStrokeWidth = (point: SignaturePoint, prevPoint: Signature
         // 速度越快线条越细，速度越慢线条越粗
         const speedFactor = Math.max(0.1, Math.min(3, 100 / Math.max(speed, 1)))
         const pressure = point.pressure || 0.5
-        const randomFactor = 0.8 + Math.random() * 0.4 // 增加随机性
 
-        return Math.max(1, Math.min(20, baseWidth * speedFactor * (0.3 + pressure * 1.4) * randomFactor))
+        return Math.max(1, Math.min(20, baseWidth * speedFactor * (0.3 + pressure * 1.4)))
       }
       return baseWidth
 
@@ -348,10 +347,9 @@ const calculateDynamicStrokeWidth = (point: SignaturePoint, prevPoint: Signature
       return 12
 
     case 'pencil':
-      // 铅笔：中等粗细，有变化
+      // 铅笔：中等粗细，稳定连续
       const pressure = point.pressure || 0.5
-      const randomness = 0.9 + Math.random() * 0.2
-      return baseWidth * (0.7 + pressure * 0.6) * randomness
+      return baseWidth * (0.7 + pressure * 0.6)
 
     case 'ballpoint':
       // 圆珠笔：细线条，轻微变化
@@ -434,14 +432,7 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
         ctx.lineTo(currentPoint.x, currentPoint.y)
         ctx.stroke()
 
-        // 添加墨迹扩散效果
-        if (lineWidth > 8 && Math.random() > 0.6) {
-          ctx.globalAlpha = 0.2
-          ctx.beginPath()
-          ctx.arc(currentPoint.x, currentPoint.y, lineWidth * 0.3, 0, Math.PI * 2)
-          ctx.fill()
-          ctx.globalAlpha = 1.0
-        }
+        // 保持毛笔的简洁流畅效果
       }
       break
 
@@ -491,41 +482,13 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
         ctx.lineTo(currentPoint.x, currentPoint.y)
         ctx.stroke()
 
-        // 添加多层纹理效果
-        for (let j = 0; j < 3; j++) {
-          if (Math.random() > 0.5) {
-            ctx.globalAlpha = 0.2
-            ctx.lineWidth = lineWidth * 0.3
-            const offsetX = (Math.random() - 0.5) * 2
-            const offsetY = (Math.random() - 0.5) * 2
-            ctx.beginPath()
-            ctx.moveTo(prevPoint.x + offsetX, prevPoint.y + offsetY)
-            ctx.lineTo(currentPoint.x + offsetX, currentPoint.y + offsetY)
-            ctx.stroke()
-          }
-        }
-
-        // 添加石墨颗粒效果
-        if (Math.random() > 0.8) {
-          ctx.globalAlpha = 0.4
-          for (let k = 0; k < 5; k++) {
-            ctx.beginPath()
-            ctx.arc(
-              currentPoint.x + (Math.random() - 0.5) * 3,
-              currentPoint.y + (Math.random() - 0.5) * 3,
-              Math.random() * 0.8,
-              0,
-              Math.PI * 2
-            )
-            ctx.fill()
-          }
-        }
+        // 保持铅笔的简洁流畅效果
       }
       ctx.globalAlpha = 1.0
       break
 
     case 'ballpoint':
-      // 圆珠笔：细线条，断续效果
+      // 圆珠笔：细线条，连续流畅
       ctx.lineCap = 'round'
       ctx.lineJoin = 'round'
 
@@ -534,26 +497,23 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
         const prevPoint = points[i - 1]
         const lineWidth = calculateDynamicStrokeWidth(currentPoint, prevPoint, penStyle, drawOptions.value.strokeWidth)
 
-        // 模拟圆珠笔的断续效果
-        if (Math.random() > 0.1) { // 90%的概率绘制
-          ctx.lineWidth = lineWidth
-          ctx.globalAlpha = Math.random() > 0.2 ? 1.0 : 0.7 // 偶尔变淡
-          ctx.beginPath()
+        // 连续流畅的圆珠笔效果
+        ctx.lineWidth = lineWidth
+        ctx.globalAlpha = 1.0 // 保持一致的透明度
+        ctx.beginPath()
 
-          if (drawOptions.value.smoothing && i < points.length - 1) {
-            const nextPoint = points[i + 1]
-            const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
-            ctx.moveTo(prevPoint.x, prevPoint.y)
-            ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
-          } else {
-            ctx.moveTo(prevPoint.x, prevPoint.y)
-            ctx.lineTo(currentPoint.x, currentPoint.y)
-          }
-          ctx.stroke()
+        if (drawOptions.value.smoothing && i < points.length - 1) {
+          const nextPoint = points[i + 1]
+          const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
+          ctx.moveTo(prevPoint.x, prevPoint.y)
+          ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
+        } else {
+          ctx.moveTo(prevPoint.x, prevPoint.y)
+          ctx.lineTo(currentPoint.x, currentPoint.y)
         }
+        ctx.stroke()
 
-        // 移除墨水聚集点 - 基于用户反馈，适中笔迹不需要黑色圆圈
-        // 保持线条的简洁和清晰
+        // 保持线条的简洁和清晰，无断续效果
       }
       ctx.globalAlpha = 1.0
       break

@@ -681,7 +681,7 @@ export class SignatureReplayController implements ReplayController {
         break
 
       case 'ballpoint':
-        // 圆珠笔：细线条，断续效果，圆形收笔避免直棱
+        // 圆珠笔：细线条，连续流畅，圆形收笔避免直棱
         this.ctx.lineCap = 'round'
         this.ctx.lineJoin = 'round'
 
@@ -690,27 +690,23 @@ export class SignatureReplayController implements ReplayController {
           const prevPoint = points[i - 1]
           const lineWidth = this.calculateDynamicStrokeWidth(currentPoint, prevPoint, penStyle, strokeWidth)
 
-          // 模拟圆珠笔的断续效果（使用确定性随机数）
-          const ballpointSeed = Math.floor(currentPoint.x * 50 + currentPoint.y * 50 + i)
-          if (this.seededRandom(ballpointSeed) > 0.1) { // 90%的概率绘制
-            this.ctx.lineWidth = lineWidth
-            this.ctx.globalAlpha = this.seededRandom(ballpointSeed + 1) > 0.2 ? 1.0 : 0.7 // 偶尔变淡
-            this.ctx.beginPath()
+          // 连续流畅的圆珠笔效果
+          this.ctx.lineWidth = lineWidth
+          this.ctx.globalAlpha = 1.0 // 保持一致的透明度
+          this.ctx.beginPath()
 
-            if (i < points.length - 1) {
-              const nextPoint = points[i + 1]
-              const controlPoint = this.getControlPoint(currentPoint, prevPoint, nextPoint)
-              this.ctx.moveTo(prevPoint.x, prevPoint.y)
-              this.ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
-            } else {
-              this.ctx.moveTo(prevPoint.x, prevPoint.y)
-              this.ctx.lineTo(currentPoint.x, currentPoint.y)
-            }
-            this.ctx.stroke()
+          if (i < points.length - 1) {
+            const nextPoint = points[i + 1]
+            const controlPoint = this.getControlPoint(currentPoint, prevPoint, nextPoint)
+            this.ctx.moveTo(prevPoint.x, prevPoint.y)
+            this.ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
+          } else {
+            this.ctx.moveTo(prevPoint.x, prevPoint.y)
+            this.ctx.lineTo(currentPoint.x, currentPoint.y)
           }
+          this.ctx.stroke()
 
-          // 移除墨水聚集点 - 基于用户反馈，适中笔迹不需要黑色圆圈
-          // 保持线条的简洁和清晰
+          // 保持线条的简洁和清晰，无断续效果
         }
         this.ctx.globalAlpha = 1.0
         break
