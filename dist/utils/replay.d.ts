@@ -120,7 +120,7 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private drawVelocitySegment;
     /**
-     * 基于速度变化的智能连接 - 优化连笔效果
+     * 基于速度变化的智能连接 - 优化连笔效果，增强连笔的明显性
      */
     private addVelocityBasedConnections;
     /**

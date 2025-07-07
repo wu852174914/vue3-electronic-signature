@@ -32,6 +32,8 @@ export interface SignatureProps {
   borderRadius?: string
   /** 是否启用回放模式 */
   replayMode?: boolean
+  /** 实时渲染模式 - 确保书写时与最终效果一致 */
+  realTimeMode?: boolean
   /** 回放数据 */
   replayData?: SignatureReplay
   /** 回放选项 */

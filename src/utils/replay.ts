@@ -893,12 +893,12 @@ export class SignatureReplayController implements ReplayController {
   }
 
   /**
-   * 基于速度变化的智能连接 - 优化连笔效果
+   * 基于速度变化的智能连接 - 优化连笔效果，增强连笔的明显性
    */
   private addVelocityBasedConnections(
     processedPoints: Array<SignaturePoint & { velocity: number, dynamicWidth: number, smoothedWidth: number }>
   ): void {
-    // 基于Fabric.js的智能连接算法
+    // 基于Fabric.js的智能连接算法，增强连笔效果
     for (let i = 1; i < processedPoints.length - 1; i++) {
       const prevPoint = processedPoints[i - 1]
       const currentPoint = processedPoints[i]
@@ -911,14 +911,44 @@ export class SignatureReplayController implements ReplayController {
       // 计算角度变化
       const angle1 = Math.atan2(currentPoint.y - prevPoint.y, currentPoint.x - prevPoint.x)
       const angle2 = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x)
-      const angleDiff = Math.abs(angle2 - angle1)
+      let angleDiff = Math.abs(angle2 - angle1)
 
-      // 智能连接：在速度变化大或角度变化大的地方添加连接
-      if (velocityChange > avgVelocity * 0.5 || angleDiff > 0.2) {
-        const connectionRadius = currentPoint.smoothedWidth * 0.4
+      // 处理角度跨越π的情况
+      if (angleDiff > Math.PI) {
+        angleDiff = 2 * Math.PI - angleDiff
+      }
+
+      // 更明显的连笔效果：降低阈值，增加连接点
+      const shouldConnect = velocityChange > avgVelocity * 0.3 || angleDiff > 0.15 // 降低阈值
+
+      if (shouldConnect) {
+        // 增强连接效果：使用渐变连接
+        const connectionRadius = currentPoint.smoothedWidth * 0.6 // 增大连接半径
+
+        // 创建径向渐变效果
+        const gradient = this.ctx.createRadialGradient(
+          currentPoint.x, currentPoint.y, 0,
+          currentPoint.x, currentPoint.y, connectionRadius
+        )
+        gradient.addColorStop(0, this.ctx.fillStyle as string)
+        gradient.addColorStop(1, 'transparent')
+
+        const originalFillStyle = this.ctx.fillStyle
+        this.ctx.fillStyle = gradient
 
         this.ctx.beginPath()
         this.ctx.arc(currentPoint.x, currentPoint.y, connectionRadius, 0, Math.PI * 2)
+        this.ctx.fill()
+
+        this.ctx.fillStyle = originalFillStyle
+      }
+
+      // 额外的连笔增强：在所有转折点添加小的连接点
+      if (angleDiff > 0.05) { // 很小的角度变化也添加连接
+        const smallConnectionRadius = currentPoint.smoothedWidth * 0.2
+
+        this.ctx.beginPath()
+        this.ctx.arc(currentPoint.x, currentPoint.y, smallConnectionRadius, 0, Math.PI * 2)
         this.ctx.fill()
       }
     }

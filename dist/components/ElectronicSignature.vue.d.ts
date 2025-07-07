@@ -18,6 +18,7 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     maxStrokeWidth: number;
     borderStyle: string;
     borderRadius: string;
+    realTimeMode: boolean;
     showToolbar: boolean;
 }>>, {
     clear(): void;
@@ -72,6 +73,7 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     maxStrokeWidth: number;
     borderStyle: string;
     borderRadius: string;
+    realTimeMode: boolean;
     showToolbar: boolean;
 }>>> & Readonly<{
     "onReplay-resume"?: (() => any) | undefined;
@@ -105,6 +107,7 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     maxStrokeWidth: number;
     borderStyle: string;
     borderRadius: string;
+    realTimeMode: boolean;
 }, {}, {}, {}, string, import('vue').ComponentProvideOptions, true, {}, any>;
 export default _default;
 type __VLS_NonUndefinedable<T> = T extends undefined ? never : T;

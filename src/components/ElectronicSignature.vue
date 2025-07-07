@@ -149,6 +149,7 @@ const props = withDefaults(defineProps<ElectronicSignatureProps>(), {
   maxStrokeWidth: 4,
   borderStyle: '1px solid #ddd',
   borderRadius: '4px',
+  realTimeMode: true,
   showToolbar: false
 })
 
@@ -179,6 +180,10 @@ const currentPath = ref<SignaturePath | null>(null)
 const signatureData = ref<SignatureData>(createEmptySignatureData(0, 0))
 const history = ref<SignatureData[]>([])
 const historyIndex = ref(-1)
+
+// 实时渲染节流控制 - 基于Vue3-Signature-Pad的16ms节流
+const lastDrawTime = ref(0)
+const drawThrottle = 16 // 约60fps，与Vue3-Signature-Pad一致
 
 // 回放相关状态
 const replayController = ref<SignatureReplayController | null>(null)
@@ -565,6 +570,29 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
   }
 }
 
+// 实时一致性绘制 - 基于Context7技术，确保书写时与最终效果一致
+const drawRealTimeConsistentPath = (): void => {
+  if (!currentPath.value || currentPath.value.points.length < 2) return
+
+  const ctx = getContext()
+  if (!ctx) return
+
+  // 清除画布并重绘所有路径，确保完全一致
+  ctx.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
+
+  // 重绘所有已完成的路径
+  for (const path of signatureData.value.paths) {
+    if (path !== currentPath.value) {
+      drawPathWithConsistentAlgorithm(ctx, path)
+    }
+  }
+
+  // 绘制当前正在绘制的路径（使用完整算法）
+  if (currentPath.value.points.length >= 2) {
+    drawPathWithConsistentAlgorithm(ctx, currentPath.value)
+  }
+}
+
 // 高效的增量绘制 - 只绘制新增的线段
 const drawIncrementalPath = (): void => {
   if (!currentPath.value || currentPath.value.points.length < 2) return
@@ -744,12 +772,12 @@ const drawVelocitySegment = (
   ctx.fill()
 }
 
-// 基于速度变化的智能连接 - 优化连笔效果
+// 基于速度变化的智能连接 - 优化连笔效果，增强连笔的明显性
 const addVelocityBasedConnections = (
   ctx: CanvasRenderingContext2D,
   processedPoints: Array<SignaturePoint & { velocity: number, dynamicWidth: number, smoothedWidth: number }>
 ): void => {
-  // 基于Fabric.js的智能连接算法
+  // 基于Fabric.js的智能连接算法，增强连笔效果
   for (let i = 1; i < processedPoints.length - 1; i++) {
     const prevPoint = processedPoints[i - 1]
     const currentPoint = processedPoints[i]
@@ -762,14 +790,44 @@ const addVelocityBasedConnections = (
     // 计算角度变化
     const angle1 = Math.atan2(currentPoint.y - prevPoint.y, currentPoint.x - prevPoint.x)
     const angle2 = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x)
-    const angleDiff = Math.abs(angle2 - angle1)
+    let angleDiff = Math.abs(angle2 - angle1)
 
-    // 智能连接：在速度变化大或角度变化大的地方添加连接
-    if (velocityChange > avgVelocity * 0.5 || angleDiff > 0.2) {
-      const connectionRadius = currentPoint.smoothedWidth * 0.4
+    // 处理角度跨越π的情况
+    if (angleDiff > Math.PI) {
+      angleDiff = 2 * Math.PI - angleDiff
+    }
+
+    // 更明显的连笔效果：降低阈值，增加连接点
+    const shouldConnect = velocityChange > avgVelocity * 0.3 || angleDiff > 0.15 // 降低阈值
+
+    if (shouldConnect) {
+      // 增强连接效果：使用渐变连接
+      const connectionRadius = currentPoint.smoothedWidth * 0.6 // 增大连接半径
+
+      // 创建径向渐变效果
+      const gradient = ctx.createRadialGradient(
+        currentPoint.x, currentPoint.y, 0,
+        currentPoint.x, currentPoint.y, connectionRadius
+      )
+      gradient.addColorStop(0, ctx.fillStyle as string)
+      gradient.addColorStop(1, 'transparent')
+
+      const originalFillStyle = ctx.fillStyle
+      ctx.fillStyle = gradient
 
       ctx.beginPath()
       ctx.arc(currentPoint.x, currentPoint.y, connectionRadius, 0, Math.PI * 2)
+      ctx.fill()
+
+      ctx.fillStyle = originalFillStyle
+    }
+
+    // 额外的连笔增强：在所有转折点添加小的连接点
+    if (angleDiff > 0.05) { // 很小的角度变化也添加连接
+      const smallConnectionRadius = currentPoint.smoothedWidth * 0.2
+
+      ctx.beginPath()
+      ctx.arc(currentPoint.x, currentPoint.y, smallConnectionRadius, 0, Math.PI * 2)
       ctx.fill()
     }
   }
@@ -822,8 +880,14 @@ const drawPathWithConsistentAlgorithm = (ctx: CanvasRenderingContext2D, path: Si
 const continueDrawing = (point: SignaturePoint): void => {
   if (!isDrawing.value || !currentPath.value || !canInteract.value) return
 
-  // 添加时间戳信息
+  // 基于Vue3-Signature-Pad的16ms节流机制
   const currentTime = performance.now()
+  if (currentTime - lastDrawTime.value < drawThrottle) {
+    return
+  }
+  lastDrawTime.value = currentTime
+
+  // 添加时间戳信息
   const pointWithTime = { ...point, time: currentTime }
 
   currentPath.value.points.push(pointWithTime)
@@ -834,8 +898,13 @@ const continueDrawing = (point: SignaturePoint): void => {
     currentPath.value.duration = currentTime - currentPath.value.startTime
   }
 
-  // 高效的增量绘制
-  drawIncrementalPath()
+  // 实时渲染模式：使用与最终效果一致的算法
+  if (props.realTimeMode) {
+    drawRealTimeConsistentPath()
+  } else {
+    // 传统增量绘制
+    drawIncrementalPath()
+  }
 
   // 更新签名数据
   updateSignatureData()

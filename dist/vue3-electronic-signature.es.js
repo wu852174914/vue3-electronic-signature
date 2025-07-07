@@ -1,52 +1,52 @@
-var st = Object.defineProperty;
-var it = (l, e, a) => e in l ? st(l, e, { enumerable: !0, configurable: !0, writable: !0, value: a }) : l[e] = a;
-var k = (l, e, a) => (it(l, typeof e != "symbol" ? e + "" : e, a), a);
-import { defineComponent as lt, ref as _, computed as E, watch as ae, nextTick as ne, onMounted as rt, onUnmounted as ht, openBlock as $, createElementBlock as z, normalizeStyle as oe, createElementVNode as T, toDisplayString as se, createCommentVNode as ie } from "vue";
-function Oe(l, e) {
+var lt = Object.defineProperty;
+var rt = (l, t, a) => t in l ? lt(l, t, { enumerable: !0, configurable: !0, writable: !0, value: a }) : l[t] = a;
+var P = (l, t, a) => (rt(l, typeof t != "symbol" ? t + "" : t, a), a);
+import { defineComponent as ht, ref as E, computed as O, watch as oe, nextTick as se, onMounted as ct, onUnmounted as ut, openBlock as z, createElementBlock as V, normalizeStyle as ie, createElementVNode as T, toDisplayString as le, createCommentVNode as re } from "vue";
+function _e(l, t) {
   return Math.sqrt(
-    Math.pow(e.x - l.x, 2) + Math.pow(e.y - l.y, 2)
+    Math.pow(t.x - l.x, 2) + Math.pow(t.y - l.y, 2)
   );
 }
-function ct(l, e) {
-  return Math.atan2(e.y - l.y, e.x - l.x);
+function dt(l, t) {
+  return Math.atan2(t.y - l.y, t.x - l.x);
 }
-function ut(l, e, a, n) {
-  const s = e || l, i = a || l, h = 0.2, c = ct(s, i) * (n ? 1 : -1), r = Oe(s, i) * h;
+function mt(l, t, a, n) {
+  const s = t || l, i = a || l, h = 0.2, c = dt(s, i) * (n ? 1 : -1), r = _e(s, i) * h;
   return {
     x: l.x + Math.cos(c) * r,
     y: l.y + Math.sin(c) * r,
     time: l.time
   };
 }
-function dt(l, e, a) {
+function gt(l, t, a) {
   if (!a.pressure.enabled)
     return a.strokeWidth;
-  const n = Oe(l, e), s = e.time - l.time, i = s > 0 ? n / s : 0, h = Math.max(0.1, Math.min(1, 1 - i * 0.01)), { min: c, max: r } = a.pressure;
+  const n = _e(l, t), s = t.time - l.time, i = s > 0 ? n / s : 0, h = Math.max(0.1, Math.min(1, 1 - i * 0.01)), { min: c, max: r } = a.pressure;
   return c + (r - c) * h;
 }
-function Lt(l, e, a) {
-  if (e.length < 2)
+function Nt(l, t, a) {
+  if (t.length < 2)
     return;
-  if (l.strokeStyle = a.strokeColor, l.lineCap = "round", l.lineJoin = "round", !a.smoothing || e.length < 3) {
-    l.beginPath(), l.lineWidth = a.strokeWidth, l.moveTo(e[0].x, e[0].y);
-    for (let s = 1; s < e.length; s++)
-      l.lineTo(e[s].x, e[s].y);
+  if (l.strokeStyle = a.strokeColor, l.lineCap = "round", l.lineJoin = "round", !a.smoothing || t.length < 3) {
+    l.beginPath(), l.lineWidth = a.strokeWidth, l.moveTo(t[0].x, t[0].y);
+    for (let s = 1; s < t.length; s++)
+      l.lineTo(t[s].x, t[s].y);
     l.stroke();
     return;
   }
-  l.beginPath(), l.moveTo(e[0].x, e[0].y);
-  for (let s = 1; s < e.length - 1; s++) {
-    const i = e[s], h = e[s + 1];
-    a.pressure.enabled ? l.lineWidth = dt(e[s - 1], i, a) : l.lineWidth = a.strokeWidth;
-    const c = ut(i, e[s - 1], h);
+  l.beginPath(), l.moveTo(t[0].x, t[0].y);
+  for (let s = 1; s < t.length - 1; s++) {
+    const i = t[s], h = t[s + 1];
+    a.pressure.enabled ? l.lineWidth = gt(t[s - 1], i, a) : l.lineWidth = a.strokeWidth;
+    const c = mt(i, t[s - 1], h);
     l.quadraticCurveTo(c.x, c.y, i.x, i.y);
   }
-  const n = e[e.length - 1];
+  const n = t[t.length - 1];
   l.lineTo(n.x, n.y), l.stroke();
 }
-function mt(l) {
-  const { canvasSize: e, paths: a } = l;
-  let n = `<svg width="${e.width}" height="${e.height}" xmlns="http://www.w3.org/2000/svg">`;
+function pt(l) {
+  const { canvasSize: t, paths: a } = l;
+  let n = `<svg width="${t.width}" height="${t.height}" xmlns="http://www.w3.org/2000/svg">`;
   return a.forEach((s) => {
     if (s.points.length < 2)
       return;
@@ -56,10 +56,10 @@ function mt(l) {
     n += `<path d="${i}" stroke="${s.strokeColor}" stroke-width="${s.strokeWidth}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
   }), n += "</svg>", n;
 }
-function gt(l, e, a = { format: "png" }) {
+function ft(l, t, a = { format: "png" }) {
   const { format: n, quality: s = 0.9, size: i, backgroundColor: h } = a;
   if (n === "svg")
-    return mt(e);
+    return pt(t);
   const c = document.createElement("canvas"), r = c.getContext("2d");
   if (i) {
     c.width = i.width, c.height = i.height;
@@ -77,61 +77,61 @@ function gt(l, e, a = { format: "png" }) {
       return c.toDataURL("image/png");
   }
 }
-function pt(l, e) {
+function yt(l, t) {
   return new Promise((a, n) => {
     const s = new Image();
     s.onload = () => {
       const i = l.getContext("2d");
       i.clearRect(0, 0, l.width, l.height), i.drawImage(s, 0, 0, l.width, l.height), a();
-    }, s.onerror = n, s.src = e;
+    }, s.onerror = n, s.src = t;
   });
 }
 function N(l) {
-  return l.paths.length === 0 || l.paths.every((e) => e.points.length === 0);
+  return l.paths.length === 0 || l.paths.every((t) => t.points.length === 0);
 }
-function j(l, e) {
+function j(l, t) {
   return {
     paths: [],
-    canvasSize: { width: l, height: e },
+    canvasSize: { width: l, height: t },
     timestamp: Date.now(),
     isEmpty: !0
   };
 }
-function B(l) {
+function Y(l) {
   return JSON.parse(JSON.stringify(l));
 }
-class ft {
-  constructor(e) {
-    k(this, "canvas");
-    k(this, "ctx");
-    k(this, "replayData", null);
-    k(this, "state", "idle");
-    k(this, "currentTime", 0);
-    k(this, "speed", 1);
-    k(this, "animationId", null);
-    k(this, "startTimestamp", 0);
-    k(this, "pausedTime", 0);
-    k(this, "options", {});
+class vt {
+  constructor(t) {
+    P(this, "canvas");
+    P(this, "ctx");
+    P(this, "replayData", null);
+    P(this, "state", "idle");
+    P(this, "currentTime", 0);
+    P(this, "speed", 1);
+    P(this, "animationId", null);
+    P(this, "startTimestamp", 0);
+    P(this, "pausedTime", 0);
+    P(this, "options", {});
     // 事件回调
-    k(this, "eventCallbacks", /* @__PURE__ */ new Map());
+    P(this, "eventCallbacks", /* @__PURE__ */ new Map());
     // 性能优化相关
-    k(this, "offscreenCanvas", null);
-    k(this, "offscreenCtx", null);
-    k(this, "lastFrameImageBitmap", null);
-    k(this, "renderThrottle", 0);
-    k(this, "isRendering", !1);
+    P(this, "offscreenCanvas", null);
+    P(this, "offscreenCtx", null);
+    P(this, "lastFrameImageBitmap", null);
+    P(this, "renderThrottle", 0);
+    P(this, "isRendering", !1);
     // 确定性随机数生成器（解决毛笔闪烁问题）
-    k(this, "seededRandom");
-    this.canvas = e, this.ctx = e.getContext("2d"), this.initializeOffscreenCanvas(), this.seededRandom = this.createSeededRandom();
+    P(this, "seededRandom");
+    this.canvas = t, this.ctx = t.getContext("2d"), this.initializeOffscreenCanvas(), this.seededRandom = this.createSeededRandom();
   }
   /**
    * 创建确定性随机数生成器（解决毛笔等笔迹的闪烁问题）
    * 基于简单的线性同余生成器（LCG）算法
    */
   createSeededRandom() {
-    return (e) => {
+    return (t) => {
       const s = Math.pow(2, 32);
-      return (1664525 * e + 1013904223) % s / s;
+      return (1664525 * t + 1013904223) % s / s;
     };
   }
   /**
@@ -146,15 +146,15 @@ class ft {
         } catch {
         }
       }
-    } catch (e) {
-      console.warn("Failed to initialize optimized offscreen canvas:", e), this.offscreenCanvas = document.createElement("canvas"), this.offscreenCanvas.width = this.canvas.width, this.offscreenCanvas.height = this.canvas.height, this.offscreenCtx = this.offscreenCanvas.getContext("2d");
+    } catch (t) {
+      console.warn("Failed to initialize optimized offscreen canvas:", t), this.offscreenCanvas = document.createElement("canvas"), this.offscreenCanvas.width = this.canvas.width, this.offscreenCanvas.height = this.canvas.height, this.offscreenCtx = this.offscreenCanvas.getContext("2d");
     }
   }
   /**
    * 设置回放数据
    */
-  setReplayData(e, a = {}) {
-    console.log("设置回放数据:", e), console.log("回放选项:", a), this.replayData = e, this.options = { ...a }, this.speed = a.speed || e.speed || 1, this.currentTime = a.startTime || 0, this.state = "idle", this.resetOptimizationState(), console.log("回放数据设置完成，路径数量:", e.paths.length), console.log("总时长:", e.totalDuration);
+  setReplayData(t, a = {}) {
+    console.log("设置回放数据:", t), console.log("回放选项:", a), this.replayData = t, this.options = { ...a }, this.speed = a.speed || t.speed || 1, this.currentTime = a.startTime || 0, this.state = "idle", this.resetOptimizationState(), console.log("回放数据设置完成，路径数量:", t.paths.length), console.log("总时长:", t.totalDuration);
   }
   /**
    * 重置优化状态
@@ -199,18 +199,18 @@ class ft {
   /**
    * 跳转到指定时间
    */
-  seek(e) {
+  seek(t) {
     if (!this.replayData)
       return;
     const a = this.options.endTime || this.replayData.totalDuration;
-    this.currentTime = Math.max(0, Math.min(e, a)), this.state === "playing" ? this.startTimestamp = performance.now() - this.currentTime / this.speed : this.pausedTime = this.currentTime / this.speed, this.renderFrame(this.currentTime);
+    this.currentTime = Math.max(0, Math.min(t, a)), this.state === "playing" ? this.startTimestamp = performance.now() - this.currentTime / this.speed : this.pausedTime = this.currentTime / this.speed, this.renderFrame(this.currentTime);
   }
   /**
    * 设置播放速度
    */
-  setSpeed(e) {
+  setSpeed(t) {
     const a = this.state === "playing";
-    a && this.pause(), this.speed = Math.max(0.1, Math.min(5, e)), this.emit("replay-speed-change", this.speed), a && this.play();
+    a && this.pause(), this.speed = Math.max(0.1, Math.min(5, t)), this.emit("replay-speed-change", this.speed), a && this.play();
   }
   /**
    * 获取当前状态
@@ -228,15 +228,15 @@ class ft {
    * 获取总时长
    */
   getTotalDuration() {
-    var e;
-    return ((e = this.replayData) == null ? void 0 : e.totalDuration) || 0;
+    var t;
+    return ((t = this.replayData) == null ? void 0 : t.totalDuration) || 0;
   }
   /**
    * 获取当前进度（0-1）
    */
   getProgress() {
-    const e = this.getTotalDuration();
-    return e > 0 ? this.currentTime / e : 0;
+    const t = this.getTotalDuration();
+    return t > 0 ? this.currentTime / t : 0;
   }
   /**
    * 动画循环
@@ -244,8 +244,8 @@ class ft {
   animate() {
     if (this.state !== "playing" || !this.replayData)
       return;
-    const e = performance.now();
-    this.currentTime = (e - this.startTimestamp) * this.speed;
+    const t = performance.now();
+    this.currentTime = (t - this.startTimestamp) * this.speed;
     const a = this.options.endTime || this.replayData.totalDuration;
     if (this.currentTime >= a) {
       this.currentTime = a, this.state = "completed", this.renderFrame(this.currentTime), this.emit("replay-complete"), this.options.loop && setTimeout(() => {
@@ -258,14 +258,14 @@ class ft {
   /**
    * 渲染指定时间的帧 - 高性能优化版本
    */
-  renderFrame(e) {
+  renderFrame(t) {
     if (!this.replayData || !this.offscreenCanvas || !this.offscreenCtx)
       return;
     const a = performance.now();
     if (!(a - this.renderThrottle < 16) && (this.renderThrottle = a, !this.isRendering)) {
       this.isRendering = !0;
       try {
-        this.renderToOffscreenCanvas(e), this.transferToMainCanvasSync();
+        this.renderToOffscreenCanvas(t), this.transferToMainCanvasSync();
       } finally {
         this.isRendering = !1;
       }
@@ -285,7 +285,7 @@ class ft {
   /**
    * 在离屏画布上渲染完整帧
    */
-  renderToOffscreenCanvas(e) {
+  renderToOffscreenCanvas(t) {
     if (!this.replayData || !this.offscreenCtx)
       return;
     const a = this.offscreenCanvas, n = this.offscreenCtx;
@@ -293,38 +293,38 @@ class ft {
     let s = !1;
     for (let i = 0; i < this.replayData.paths.length; i++) {
       const h = this.replayData.paths[i], c = h.startTime || 0, r = h.endTime || c + (h.duration || 0);
-      if (e < c)
+      if (t < c)
         break;
-      if (e >= r) {
-        this.drawCompletePathToOffscreen(h), !s && Math.abs(e - r) < 32 && this.emit("replay-path-end", i, h);
+      if (t >= r) {
+        this.drawCompletePathToOffscreen(h), !s && Math.abs(t - r) < 32 && this.emit("replay-path-end", i, h);
         continue;
       }
       s = !0;
-      const m = Math.max(0, Math.min(1, (e - c) / Math.max(r - c, 1)));
-      m > 0 && Math.abs(e - c) < 32 && this.emit("replay-path-start", i, h), this.drawPartialPathToOffscreen(h, m);
+      const m = Math.max(0, Math.min(1, (t - c) / Math.max(r - c, 1)));
+      m > 0 && Math.abs(t - c) < 32 && this.emit("replay-path-start", i, h), this.drawPartialPathToOffscreen(h, m);
       break;
     }
   }
   /**
    * 获取指定时间内的所有点
    */
-  getPointsUpToTime(e, a, n) {
+  getPointsUpToTime(t, a, n) {
     const s = [];
-    for (let i = 0; i < e.length; i++) {
-      const h = e[i], c = a + (h.relativeTime || i * 50);
+    for (let i = 0; i < t.length; i++) {
+      const h = t[i], c = a + (h.relativeTime || i * 50);
       if (c <= n)
         s.push(h);
       else {
         if (i > 0) {
-          const r = e[i - 1], m = a + (r.relativeTime || (i - 1) * 50);
+          const r = t[i - 1], m = a + (r.relativeTime || (i - 1) * 50);
           if (m <= n) {
-            const p = (n - m) / (c - m), u = {
+            const p = (n - m) / (c - m), v = {
               x: r.x + (h.x - r.x) * p,
               y: r.y + (h.y - r.y) * p,
               time: n,
               pressure: r.pressure ? r.pressure + (h.pressure || r.pressure - r.pressure) * p : h.pressure
             };
-            s.push(u);
+            s.push(v);
           }
         }
         break;
@@ -335,33 +335,33 @@ class ft {
   /**
    * 根据笔迹样式计算动态线宽（与录制时一致）
    */
-  calculateDynamicStrokeWidth(e, a, n, s) {
+  calculateDynamicStrokeWidth(t, a, n, s) {
     switch (n) {
       case "pen":
         return 1;
       case "brush":
         if (a) {
-          const w = Math.sqrt(Math.pow(e.x - a.x, 2) + Math.pow(e.y - a.y, 2)), v = Math.max(1, (e.time || 0) - (a.time || 0)), M = w / v, R = Math.max(0.1, Math.min(3, 100 / Math.max(M, 1))), P = e.pressure || 0.5, S = Math.floor(e.x * 1e3 + e.y * 1e3 + (e.time || 0)), J = 0.8 + this.seededRandom(S) * 0.4;
-          return Math.max(1, Math.min(20, s * R * (0.3 + P * 1.4) * J));
+          const d = Math.sqrt(Math.pow(t.x - a.x, 2) + Math.pow(t.y - a.y, 2)), x = Math.max(1, (t.time || 0) - (a.time || 0)), C = d / x, _ = Math.max(0.1, Math.min(3, 100 / Math.max(C, 1))), A = t.pressure || 0.5, k = Math.floor(t.x * 1e3 + t.y * 1e3 + (t.time || 0)), D = 0.8 + this.seededRandom(k) * 0.4;
+          return Math.max(1, Math.min(20, s * _ * (0.3 + A * 1.4) * D));
         }
         return s;
       case "marker":
         return 12;
       case "pencil":
-        const i = e.pressure || 0.5, h = Math.floor(e.x * 1e3 + e.y * 1e3 + (e.time || 0)), c = 0.9 + this.seededRandom(h + 1) * 0.2;
+        const i = t.pressure || 0.5, h = Math.floor(t.x * 1e3 + t.y * 1e3 + (t.time || 0)), c = 0.9 + this.seededRandom(h + 1) * 0.2;
         return s * (0.7 + i * 0.6) * c;
       case "ballpoint":
-        const r = e.pressure || 0.5;
+        const r = t.pressure || 0.5;
         return s * (0.8 + r * 0.4);
       case "elegant":
-        const m = e.pressure || 0.5;
+        const m = t.pressure || 0.5;
         let p = 1;
         if (a) {
-          const w = Math.sqrt(Math.pow(e.x - a.x, 2) + Math.pow(e.y - a.y, 2)), v = Math.max(1, (e.time || 0) - (a.time || 0)), M = w / v;
-          p = Math.max(0.3, Math.min(2, 50 / Math.max(M, 1)));
+          const d = Math.sqrt(Math.pow(t.x - a.x, 2) + Math.pow(t.y - a.y, 2)), x = Math.max(1, (t.time || 0) - (a.time || 0)), C = d / x;
+          p = Math.max(0.3, Math.min(2, 50 / Math.max(C, 1)));
         }
-        const u = m * p;
-        return s * (0.4 + u * 1.6);
+        const v = m * p;
+        return s * (0.4 + v * 1.6);
       default:
         return s;
     }
@@ -369,61 +369,61 @@ class ft {
   /**
    * 根据笔迹样式绘制线段（与录制时完全一致）
    */
-  drawStyledStrokeForReplay(e, a, n, s) {
-    if (!(e.length < 2))
+  drawStyledStrokeForReplay(t, a, n, s) {
+    if (!(t.length < 2))
       switch (this.ctx.strokeStyle = n, a) {
         case "pen":
-          if (this.ctx.lineWidth = 1, this.ctx.lineCap = "butt", this.ctx.lineJoin = "miter", this.ctx.beginPath(), this.ctx.moveTo(e[0].x, e[0].y), e.length >= 3) {
-            for (let i = 1; i < e.length - 1; i++) {
-              const h = this.getControlPoint(e[i], e[i - 1], e[i + 1]);
-              this.ctx.quadraticCurveTo(h.x, h.y, e[i].x, e[i].y);
+          if (this.ctx.lineWidth = 1, this.ctx.lineCap = "butt", this.ctx.lineJoin = "miter", this.ctx.beginPath(), this.ctx.moveTo(t[0].x, t[0].y), t.length >= 3) {
+            for (let i = 1; i < t.length - 1; i++) {
+              const h = this.getControlPoint(t[i], t[i - 1], t[i + 1]);
+              this.ctx.quadraticCurveTo(h.x, h.y, t[i].x, t[i].y);
             }
-            this.ctx.lineTo(e[e.length - 1].x, e[e.length - 1].y);
+            this.ctx.lineTo(t[t.length - 1].x, t[t.length - 1].y);
           } else
-            for (let i = 1; i < e.length; i++)
-              this.ctx.lineTo(e[i].x, e[i].y);
+            for (let i = 1; i < t.length; i++)
+              this.ctx.lineTo(t[i].x, t[i].y);
           this.ctx.stroke();
           break;
         case "brush":
           this.ctx.lineCap = "round", this.ctx.lineJoin = "round";
-          for (let i = 1; i < e.length; i++) {
-            const h = e[i], c = e[i - 1], r = this.calculateDynamicStrokeWidth(h, c, a, s);
+          for (let i = 1; i < t.length; i++) {
+            const h = t[i], c = t[i - 1], r = this.calculateDynamicStrokeWidth(h, c, a, s);
             this.ctx.lineWidth = r, this.ctx.beginPath(), this.ctx.moveTo(c.x, c.y), this.ctx.lineTo(h.x, h.y), this.ctx.stroke();
             const m = Math.floor(h.x * 100 + h.y * 100 + i);
             r > 8 && this.seededRandom(m) > 0.6 && (this.ctx.globalAlpha = 0.2, this.ctx.beginPath(), this.ctx.arc(h.x, h.y, r * 0.3, 0, Math.PI * 2), this.ctx.fill(), this.ctx.globalAlpha = 1);
           }
           break;
         case "marker":
-          this.ctx.globalAlpha = 0.7, this.ctx.lineWidth = 12, this.ctx.lineCap = "square", this.ctx.lineJoin = "bevel", this.ctx.beginPath(), this.ctx.moveTo(e[0].x, e[0].y);
-          for (let i = 1; i < e.length; i++)
-            this.ctx.lineTo(e[i].x, e[i].y);
-          this.ctx.stroke(), this.ctx.globalAlpha = 0.3, this.ctx.lineWidth = 16, this.ctx.beginPath(), this.ctx.moveTo(e[0].x, e[0].y);
-          for (let i = 1; i < e.length; i++)
-            this.ctx.lineTo(e[i].x, e[i].y);
+          this.ctx.globalAlpha = 0.7, this.ctx.lineWidth = 12, this.ctx.lineCap = "square", this.ctx.lineJoin = "bevel", this.ctx.beginPath(), this.ctx.moveTo(t[0].x, t[0].y);
+          for (let i = 1; i < t.length; i++)
+            this.ctx.lineTo(t[i].x, t[i].y);
+          this.ctx.stroke(), this.ctx.globalAlpha = 0.3, this.ctx.lineWidth = 16, this.ctx.beginPath(), this.ctx.moveTo(t[0].x, t[0].y);
+          for (let i = 1; i < t.length; i++)
+            this.ctx.lineTo(t[i].x, t[i].y);
           this.ctx.stroke(), this.ctx.globalAlpha = 1;
           break;
         case "pencil":
           this.ctx.lineCap = "round", this.ctx.lineJoin = "round";
-          for (let i = 1; i < e.length; i++) {
-            const h = e[i], c = e[i - 1], r = this.calculateDynamicStrokeWidth(h, c, a, s);
+          for (let i = 1; i < t.length; i++) {
+            const h = t[i], c = t[i - 1], r = this.calculateDynamicStrokeWidth(h, c, a, s);
             this.ctx.lineWidth = r, this.ctx.globalAlpha = 0.8, this.ctx.beginPath(), this.ctx.moveTo(c.x, c.y), this.ctx.lineTo(h.x, h.y), this.ctx.stroke();
             for (let p = 0; p < 3; p++) {
-              const u = Math.floor(h.x * 10 + h.y * 10 + i * 10 + p);
-              if (this.seededRandom(u) > 0.5) {
+              const v = Math.floor(h.x * 10 + h.y * 10 + i * 10 + p);
+              if (this.seededRandom(v) > 0.5) {
                 this.ctx.globalAlpha = 0.2, this.ctx.lineWidth = r * 0.3;
-                const w = (this.seededRandom(u + 1) - 0.5) * 2, v = (this.seededRandom(u + 2) - 0.5) * 2;
-                this.ctx.beginPath(), this.ctx.moveTo(c.x + w, c.y + v), this.ctx.lineTo(h.x + w, h.y + v), this.ctx.stroke();
+                const d = (this.seededRandom(v + 1) - 0.5) * 2, x = (this.seededRandom(v + 2) - 0.5) * 2;
+                this.ctx.beginPath(), this.ctx.moveTo(c.x + d, c.y + x), this.ctx.lineTo(h.x + d, h.y + x), this.ctx.stroke();
               }
             }
             const m = Math.floor(h.x * 5 + h.y * 5 + i * 5);
             if (this.seededRandom(m) > 0.8) {
               this.ctx.globalAlpha = 0.4;
               for (let p = 0; p < 5; p++) {
-                const u = m + p * 10;
+                const v = m + p * 10;
                 this.ctx.beginPath(), this.ctx.arc(
-                  h.x + (this.seededRandom(u + 1) - 0.5) * 3,
-                  h.y + (this.seededRandom(u + 2) - 0.5) * 3,
-                  this.seededRandom(u + 3) * 0.8,
+                  h.x + (this.seededRandom(v + 1) - 0.5) * 3,
+                  h.y + (this.seededRandom(v + 2) - 0.5) * 3,
+                  this.seededRandom(v + 3) * 0.8,
                   0,
                   Math.PI * 2
                 ), this.ctx.fill();
@@ -434,12 +434,12 @@ class ft {
           break;
         case "ballpoint":
           this.ctx.lineCap = "round", this.ctx.lineJoin = "round";
-          for (let i = 1; i < e.length; i++) {
-            const h = e[i], c = e[i - 1], r = this.calculateDynamicStrokeWidth(h, c, a, s), m = Math.floor(h.x * 50 + h.y * 50 + i);
+          for (let i = 1; i < t.length; i++) {
+            const h = t[i], c = t[i - 1], r = this.calculateDynamicStrokeWidth(h, c, a, s), m = Math.floor(h.x * 50 + h.y * 50 + i);
             if (this.seededRandom(m) > 0.1) {
-              if (this.ctx.lineWidth = r, this.ctx.globalAlpha = this.seededRandom(m + 1) > 0.2 ? 1 : 0.7, this.ctx.beginPath(), i < e.length - 1) {
-                const u = e[i + 1], w = this.getControlPoint(h, c, u);
-                this.ctx.moveTo(c.x, c.y), this.ctx.quadraticCurveTo(w.x, w.y, h.x, h.y);
+              if (this.ctx.lineWidth = r, this.ctx.globalAlpha = this.seededRandom(m + 1) > 0.2 ? 1 : 0.7, this.ctx.beginPath(), i < t.length - 1) {
+                const v = t[i + 1], d = this.getControlPoint(h, c, v);
+                this.ctx.moveTo(c.x, c.y), this.ctx.quadraticCurveTo(d.x, d.y, h.x, h.y);
               } else
                 this.ctx.moveTo(c.x, c.y), this.ctx.lineTo(h.x, h.y);
               this.ctx.stroke();
@@ -450,35 +450,35 @@ class ft {
           this.ctx.globalAlpha = 1;
           break;
         case "elegant":
-          this.drawElegantStroke(e, n, s);
+          this.drawElegantStroke(t, n, s);
           break;
       }
   }
   /**
    * 绘制优雅笔迹 - 基于Fabric.js和Vue3-Signature-Pad的速度压力感应技术
    */
-  drawElegantStroke(e, a, n) {
-    if (e.length < 2)
+  drawElegantStroke(t, a, n) {
+    if (t.length < 2)
       return;
     this.ctx.strokeStyle = a, this.ctx.fillStyle = a, this.ctx.lineCap = "round", this.ctx.lineJoin = "round", this.ctx.globalCompositeOperation = "source-over";
-    const s = this.preprocessPointsForVelocity(e, n);
+    const s = this.preprocessPointsForVelocity(t, n);
     this.drawVelocityBasedPath(s), this.addVelocityBasedConnections(s);
   }
   /**
    * 预处理点数据，计算速度和动态线宽 - 基于Vue3-Signature-Pad算法
    */
-  preprocessPointsForVelocity(e, a) {
+  preprocessPointsForVelocity(t, a) {
     const n = [];
-    for (let s = 0; s < e.length; s++) {
-      const i = e[s];
+    for (let s = 0; s < t.length; s++) {
+      const i = t[s];
       let h = 0, c = a;
       if (s > 0) {
-        const m = e[s - 1], p = Math.sqrt(
+        const m = t[s - 1], p = Math.sqrt(
           Math.pow(i.x - m.x, 2) + Math.pow(i.y - m.y, 2)
-        ), u = Math.max(1, (i.time || 0) - (m.time || 0));
-        h = p / u;
-        const w = i.pressure || 0.5, v = Math.max(0.2, Math.min(3, 100 / Math.max(h, 1)));
-        c = a * (0.3 + w * v * 1.4);
+        ), v = Math.max(1, (i.time || 0) - (m.time || 0));
+        h = p / v;
+        const d = i.pressure || 0.5, x = Math.max(0.2, Math.min(3, 100 / Math.max(h, 1)));
+        c = a * (0.3 + d * x * 1.4);
       }
       let r = c;
       if (s > 0) {
@@ -497,27 +497,27 @@ class ft {
   /**
    * 基于速度的路径绘制 - 使用Fabric.js的平滑算法
    */
-  drawVelocityBasedPath(e) {
-    if (!(e.length < 2))
-      for (let a = 1; a < e.length; a++) {
-        const n = e[a], s = e[a - 1];
+  drawVelocityBasedPath(t) {
+    if (!(t.length < 2))
+      for (let a = 1; a < t.length; a++) {
+        const n = t[a], s = t[a - 1];
         this.drawVelocitySegment(s, n, s.smoothedWidth, n.smoothedWidth);
       }
   }
   /**
    * 绘制基于速度的单个线段 - 实现由粗到细的渐变
    */
-  drawVelocitySegment(e, a, n, s) {
+  drawVelocitySegment(t, a, n, s) {
     const i = Math.sqrt(
-      Math.pow(a.x - e.x, 2) + Math.pow(a.y - e.y, 2)
+      Math.pow(a.x - t.x, 2) + Math.pow(a.y - t.y, 2)
     ), h = Math.max(2, Math.min(10, Math.floor(i / 3)));
     this.ctx.beginPath();
     const c = [];
     for (let r = 0; r <= h; r++) {
-      const m = r / h, p = this.smoothStep(m), u = e.x + (a.x - e.x) * p, w = e.y + (a.y - e.y) * p, v = n + (s - n) * p, M = a.x - e.x, R = a.y - e.y, P = Math.sqrt(M * M + R * R);
-      if (P > 0) {
-        const S = -R / P * v / 2, J = M / P * v / 2;
-        r === 0 ? this.ctx.moveTo(u + S, w + J) : this.ctx.lineTo(u + S, w + J), c.push({ x: u - S, y: w - J });
+      const m = r / h, p = this.smoothStep(m), v = t.x + (a.x - t.x) * p, d = t.y + (a.y - t.y) * p, x = n + (s - n) * p, C = a.x - t.x, _ = a.y - t.y, A = Math.sqrt(C * C + _ * _);
+      if (A > 0) {
+        const k = -_ / A * x / 2, D = C / A * x / 2;
+        r === 0 ? this.ctx.moveTo(v + k, d + D) : this.ctx.lineTo(v + k, d + D), c.push({ x: v - k, y: d - D });
       }
     }
     for (let r = c.length - 1; r >= 0; r--)
@@ -525,35 +525,49 @@ class ft {
     this.ctx.closePath(), this.ctx.fill();
   }
   /**
-   * 基于速度变化的智能连接 - 优化连笔效果
+   * 基于速度变化的智能连接 - 优化连笔效果，增强连笔的明显性
    */
-  addVelocityBasedConnections(e) {
-    for (let a = 1; a < e.length - 1; a++) {
-      const n = e[a - 1], s = e[a], i = e[a + 1], h = Math.abs(s.velocity - n.velocity), c = (s.velocity + n.velocity) / 2, r = Math.atan2(s.y - n.y, s.x - n.x), m = Math.atan2(i.y - s.y, i.x - s.x), p = Math.abs(m - r);
-      if (h > c * 0.5 || p > 0.2) {
-        const u = s.smoothedWidth * 0.4;
-        this.ctx.beginPath(), this.ctx.arc(s.x, s.y, u, 0, Math.PI * 2), this.ctx.fill();
+  addVelocityBasedConnections(t) {
+    for (let a = 1; a < t.length - 1; a++) {
+      const n = t[a - 1], s = t[a], i = t[a + 1], h = Math.abs(s.velocity - n.velocity), c = (s.velocity + n.velocity) / 2, r = Math.atan2(s.y - n.y, s.x - n.x), m = Math.atan2(i.y - s.y, i.x - s.x);
+      let p = Math.abs(m - r);
+      if (p > Math.PI && (p = 2 * Math.PI - p), h > c * 0.3 || p > 0.15) {
+        const d = s.smoothedWidth * 0.6, x = this.ctx.createRadialGradient(
+          s.x,
+          s.y,
+          0,
+          s.x,
+          s.y,
+          d
+        );
+        x.addColorStop(0, this.ctx.fillStyle), x.addColorStop(1, "transparent");
+        const C = this.ctx.fillStyle;
+        this.ctx.fillStyle = x, this.ctx.beginPath(), this.ctx.arc(s.x, s.y, d, 0, Math.PI * 2), this.ctx.fill(), this.ctx.fillStyle = C;
+      }
+      if (p > 0.05) {
+        const d = s.smoothedWidth * 0.2;
+        this.ctx.beginPath(), this.ctx.arc(s.x, s.y, d, 0, Math.PI * 2), this.ctx.fill();
       }
     }
   }
   /**
    * 平滑插值函数 - 基于Paper.js的平滑算法
    */
-  smoothStep(e) {
-    return e * e * (3 - 2 * e);
+  smoothStep(t) {
+    return t * t * (3 - 2 * t);
   }
   /**
    * 获取控制点（用于贝塞尔曲线平滑） - 与signature.ts中的实现一致
    */
-  getControlPoint(e, a, n) {
+  getControlPoint(t, a, n) {
     const i = {
       length: Math.sqrt(Math.pow(n.x - a.x, 2) + Math.pow(n.y - a.y, 2)),
       angle: Math.atan2(n.y - a.y, n.x - a.x)
     }, h = i.angle + Math.PI, c = i.length * 0.2;
     return {
-      x: e.x + Math.cos(h) * c,
-      y: e.y + Math.sin(h) * c,
-      time: e.time || 0
+      x: t.x + Math.cos(h) * c,
+      y: t.y + Math.sin(h) * c,
+      time: t.time || 0
     };
   }
   /**
@@ -565,51 +579,51 @@ class ft {
   /**
    * 注册事件监听器
    */
-  on(e, a) {
-    this.eventCallbacks.has(e) || this.eventCallbacks.set(e, []), this.eventCallbacks.get(e).push(a);
+  on(t, a) {
+    this.eventCallbacks.has(t) || this.eventCallbacks.set(t, []), this.eventCallbacks.get(t).push(a);
   }
   /**
    * 移除事件监听器
    */
-  off(e, a) {
-    if (this.eventCallbacks.has(e))
+  off(t, a) {
+    if (this.eventCallbacks.has(t))
       if (a) {
-        const n = this.eventCallbacks.get(e), s = n.indexOf(a);
+        const n = this.eventCallbacks.get(t), s = n.indexOf(a);
         s > -1 && n.splice(s, 1);
       } else
-        this.eventCallbacks.delete(e);
+        this.eventCallbacks.delete(t);
   }
   /**
    * 触发事件
    */
-  emit(e, ...a) {
-    const n = this.eventCallbacks.get(e);
+  emit(t, ...a) {
+    const n = this.eventCallbacks.get(t);
     n && n.forEach((s) => s(...a));
   }
   /**
    * 在离屏画布上绘制完整路径
    */
-  drawCompletePathToOffscreen(e) {
-    if (!this.offscreenCtx || e.points.length < 2)
+  drawCompletePathToOffscreen(t) {
+    if (!this.offscreenCtx || t.points.length < 2)
       return;
     const a = this.ctx;
     this.ctx = this.offscreenCtx;
-    const n = e.penStyle || this.options.penStyle || "pen";
-    this.drawStyledStrokeForReplay(e.points, n, e.strokeColor, e.strokeWidth), this.ctx = a;
+    const n = t.penStyle || this.options.penStyle || "pen";
+    this.drawStyledStrokeForReplay(t.points, n, t.strokeColor, t.strokeWidth), this.ctx = a;
   }
   /**
    * 在离屏画布上绘制部分路径
    */
-  drawPartialPathToOffscreen(e, a) {
-    if (!this.offscreenCtx || e.points.length < 2)
+  drawPartialPathToOffscreen(t, a) {
+    if (!this.offscreenCtx || t.points.length < 2)
       return;
-    const n = e.startTime || 0, s = e.duration || 0, i = n + s * a, h = this.getPointsUpToTime(e.points, n, i);
+    const n = t.startTime || 0, s = t.duration || 0, i = n + s * a, h = this.getPointsUpToTime(t.points, n, i);
     if (h.length < 2)
       return;
     const c = this.ctx;
     this.ctx = this.offscreenCtx;
-    const r = e.penStyle || this.options.penStyle || "pen";
-    this.drawStyledStrokeForReplay(h, r, e.strokeColor, e.strokeWidth), this.ctx = c;
+    const r = t.penStyle || this.options.penStyle || "pen";
+    this.drawStyledStrokeForReplay(h, r, t.strokeColor, t.strokeWidth), this.ctx = c;
   }
   /**
    * 销毁控制器
@@ -618,24 +632,24 @@ class ft {
     this.stop(), this.eventCallbacks.clear(), this.replayData = null, this.lastFrameImageBitmap && (this.lastFrameImageBitmap.close(), this.lastFrameImageBitmap = null);
   }
 }
-function yt(l) {
-  const e = l.paths.map((r) => {
-    const m = r.points.map((u, w) => {
-      var M;
-      let v;
-      if (u.time && r.points[0].time)
-        v = u.time - r.points[0].time;
-      else if (w === 0)
-        v = 0;
+function xt(l) {
+  const t = l.paths.map((r) => {
+    const m = r.points.map((v, d) => {
+      var C;
+      let x;
+      if (v.time && r.points[0].time)
+        x = v.time - r.points[0].time;
+      else if (d === 0)
+        x = 0;
       else {
-        const R = r.points[w - 1], S = Math.sqrt(
-          Math.pow(u.x - R.x, 2) + Math.pow(u.y - R.y, 2)
+        const _ = r.points[d - 1], k = Math.sqrt(
+          Math.pow(v.x - _.x, 2) + Math.pow(v.y - _.y, 2)
         ) / 100 * 1e3;
-        v = (((M = m[w - 1]) == null ? void 0 : M.relativeTime) || 0) + Math.max(S, 16);
+        x = (((C = m[d - 1]) == null ? void 0 : C.relativeTime) || 0) + Math.max(k, 16);
       }
       return {
-        ...u,
-        relativeTime: v
+        ...v,
+        relativeTime: x
       };
     }), p = m.length > 0 ? m[m.length - 1].relativeTime : 0;
     return {
@@ -644,24 +658,24 @@ function yt(l) {
       duration: p
     };
   }), a = [];
-  for (let r = 0; r < e.length; r++) {
-    const m = e[r];
+  for (let r = 0; r < t.length; r++) {
+    const m = t[r];
     let p;
     if (r === 0)
       p = 0;
     else {
-      const v = a[r - 1], M = vt(
+      const x = a[r - 1], C = Ct(
         l.paths[r - 1].points,
         l.paths[r].points
       );
-      p = v.endTime + M;
+      p = x.endTime + C;
     }
-    const u = p + m.duration, w = {
+    const v = p + m.duration, d = {
       ...m,
       startTime: p,
-      endTime: u
+      endTime: v
     };
-    console.log(`路径 ${r}: 开始时间=${p}, 结束时间=${u}, 持续时间=${m.duration}`), a.push(w);
+    console.log(`路径 ${r}: 开始时间=${p}, 结束时间=${v}, 持续时间=${m.duration}`), a.push(d);
   }
   const n = a.length > 0 ? a[a.length - 1].endTime : 0;
   console.log("回放数据生成完成:"), console.log("- 路径数量:", a.length), console.log("- 总时长:", n), console.log("- 路径详情:", a.map((r) => ({
@@ -670,7 +684,7 @@ function yt(l) {
     duration: r.duration,
     pointCount: r.points.length
   })));
-  const s = a.reduce((r, m) => r + Ct(m.points), 0), i = n > 0 ? s / (n / 1e3) : 0, h = a.slice(1).map((r, m) => {
+  const s = a.reduce((r, m) => r + bt(m.points), 0), i = n > 0 ? s / (n / 1e3) : 0, h = a.slice(1).map((r, m) => {
     const p = a[m];
     return r.startTime - p.endTime;
   }), c = h.length > 0 ? h.reduce((r, m) => r + m, 0) / h.length : 0;
@@ -679,17 +693,17 @@ function yt(l) {
     totalDuration: n,
     speed: 1,
     metadata: {
-      deviceType: xt(l),
+      deviceType: Mt(l),
       averageSpeed: i,
       totalDistance: s,
       averagePauseTime: c
     }
   };
 }
-function vt(l, e) {
-  if (l.length === 0 || e.length === 0)
+function Ct(l, t) {
+  if (l.length === 0 || t.length === 0)
     return 200;
-  const a = l[l.length - 1], n = e[0];
+  const a = l[l.length - 1], n = t[0];
   if (a.time && n.time)
     return Math.max(n.time - a.time, 50);
   const s = Math.sqrt(
@@ -697,24 +711,24 @@ function vt(l, e) {
   );
   return Math.min(Math.max(s * 2, 100), 1e3);
 }
-function xt(l) {
-  const e = l.paths.reduce((i, h) => i + h.points.length, 0), a = l.paths.length;
-  if (e === 0)
+function Mt(l) {
+  const t = l.paths.reduce((i, h) => i + h.points.length, 0), a = l.paths.length;
+  if (t === 0)
     return "touch";
-  const n = e / a;
+  const n = t / a;
   return n > 20 ? "touch" : n < 10 ? "mouse" : l.paths.some(
     (i) => i.points.some((h) => h.pressure !== void 0)
   ) ? "pen" : "touch";
 }
-function Ct(l) {
-  let e = 0;
+function bt(l) {
+  let t = 0;
   for (let a = 1; a < l.length; a++) {
     const n = l[a].x - l[a - 1].x, s = l[a].y - l[a - 1].y;
-    e += Math.sqrt(n * n + s * s);
+    t += Math.sqrt(n * n + s * s);
   }
-  return e;
+  return t;
 }
-const _e = {
+const Ae = {
   pen: {
     name: "钢笔",
     description: "极细线条，锐利精准，商务签名",
@@ -801,15 +815,15 @@ const _e = {
   }
 };
 function wt(l) {
-  return _e[l];
+  return Ae[l];
 }
-function Ut() {
-  return Object.entries(_e).map(([l, e]) => ({
+function jt() {
+  return Object.entries(Ae).map(([l, t]) => ({
     key: l,
-    config: e
+    config: t
   }));
 }
-function Mt(l, e) {
+function Tt(l, t) {
   const a = wt(l);
   return {
     strokeWidth: a.strokeWidth,
@@ -817,16 +831,16 @@ function Mt(l, e) {
     pressure: a.pressure,
     lineCap: a.lineCap,
     lineJoin: a.lineJoin,
-    strokeColor: e || a.recommendedColor || "#000000"
+    strokeColor: t || a.recommendedColor || "#000000"
   };
 }
-const bt = ["width", "height"], Tt = {
+const kt = ["width", "height"], St = {
   key: 1,
   class: "signature-toolbar"
-}, kt = ["disabled"], St = ["disabled"], Pt = ["disabled"], Dt = {
+}, Pt = ["disabled"], Dt = ["disabled"], Wt = ["disabled"], Rt = {
   key: 2,
   class: "replay-controls"
-}, Wt = { class: "replay-buttons" }, Rt = ["disabled"], It = { key: 0 }, Et = { key: 1 }, Ot = ["disabled"], _t = { class: "replay-progress" }, At = ["max", "value", "disabled"], Ft = { class: "time-display" }, Jt = { class: "replay-speed" }, qt = /* @__PURE__ */ lt({
+}, It = { class: "replay-buttons" }, Et = ["disabled"], Ot = { key: 0 }, _t = { key: 1 }, At = ["disabled"], Ft = { class: "replay-progress" }, Jt = ["max", "value", "disabled"], qt = { class: "time-display" }, $t = { class: "replay-speed" }, Bt = 16, zt = /* @__PURE__ */ ht({
   __name: "ElectronicSignature",
   props: {
     showToolbar: { type: Boolean, default: !1 },
@@ -845,17 +859,18 @@ const bt = ["width", "height"], Tt = {
     borderStyle: { default: "1px solid #ddd" },
     borderRadius: { default: "4px" },
     replayMode: { type: Boolean },
+    realTimeMode: { type: Boolean, default: !0 },
     replayData: {},
     replayOptions: {}
   },
   emits: ["signature-start", "signature-drawing", "signature-end", "signature-clear", "signature-undo", "signature-redo", "replay-start", "replay-progress", "replay-pause", "replay-resume", "replay-stop", "replay-complete", "replay-path-start", "replay-path-end", "replay-speed-change"],
-  setup(l, { expose: e, emit: a }) {
-    const n = l, s = a, i = _(), h = _(!1), c = _(null), r = _(j(0, 0)), m = _([]), p = _(-1), u = _(null), w = _(!1), v = _("idle"), M = _(0), R = _(0), P = E(() => typeof n.width == "number" ? n.width : 800), S = E(() => typeof n.height == "number" ? n.height : 300), J = E(() => ({
+  setup(l, { expose: t, emit: a }) {
+    const n = l, s = a, i = E(), h = E(!1), c = E(null), r = E(j(0, 0)), m = E([]), p = E(-1), v = E(0), d = E(null), x = E(!1), C = E("idle"), _ = E(0), A = E(0), k = O(() => typeof n.width == "number" ? n.width : 800), D = O(() => typeof n.height == "number" ? n.height : 300), Je = O(() => ({
       position: "relative",
       display: "inline-block",
       width: typeof n.width == "string" ? n.width : `${n.width}px`,
       height: typeof n.height == "string" ? n.height : `${n.height}px`
-    })), Fe = E(() => ({
+    })), qe = O(() => ({
       border: n.borderStyle,
       borderRadius: n.borderRadius,
       backgroundColor: n.backgroundColor,
@@ -863,7 +878,7 @@ const bt = ["width", "height"], Tt = {
       display: "block",
       width: "100%",
       height: "100%"
-    })), Je = E(() => ({
+    })), $e = O(() => ({
       position: "absolute",
       top: "50%",
       left: "50%",
@@ -872,23 +887,23 @@ const bt = ["width", "height"], Tt = {
       fontSize: "14px",
       pointerEvents: "none",
       userSelect: "none"
-    })), qe = E(() => w.value ? !1 : n.placeholder && N(r.value)), le = E(() => p.value > 0), re = E(() => p.value < m.value.length - 1), he = E(() => w.value && u.value), A = E(() => !he.value && !n.disabled), $e = E(() => {
-      var t;
-      return he.value && ((t = n.replayOptions) == null ? void 0 : t.showControls) !== !1;
-    }), I = E(() => {
+    })), Be = O(() => x.value ? !1 : n.placeholder && N(r.value)), he = O(() => p.value > 0), ce = O(() => p.value < m.value.length - 1), ue = O(() => x.value && d.value), F = O(() => !ue.value && !n.disabled), ze = O(() => {
+      var e;
+      return ue.value && ((e = n.replayOptions) == null ? void 0 : e.showControls) !== !1;
+    }), I = O(() => {
       if (n.penStyle) {
-        const t = Mt(n.penStyle, n.strokeColor);
+        const e = Tt(n.penStyle, n.strokeColor);
         return {
-          strokeColor: t.strokeColor,
-          strokeWidth: n.strokeWidth || t.strokeWidth,
-          smoothing: n.smoothing !== void 0 ? n.smoothing : t.smoothing,
+          strokeColor: e.strokeColor,
+          strokeWidth: n.strokeWidth || e.strokeWidth,
+          smoothing: n.smoothing !== void 0 ? n.smoothing : e.smoothing,
           pressure: {
-            enabled: n.pressureSensitive !== void 0 ? n.pressureSensitive : t.pressure.enabled,
-            min: n.minStrokeWidth || t.pressure.min,
-            max: n.maxStrokeWidth || t.pressure.max
+            enabled: n.pressureSensitive !== void 0 ? n.pressureSensitive : e.pressure.enabled,
+            min: n.minStrokeWidth || e.pressure.min,
+            max: n.maxStrokeWidth || e.pressure.max
           },
-          lineCap: t.lineCap,
-          lineJoin: t.lineJoin
+          lineCap: e.lineCap,
+          lineJoin: e.lineJoin
         };
       }
       return {
@@ -903,21 +918,21 @@ const bt = ["width", "height"], Tt = {
         lineCap: "round",
         lineJoin: "round"
       };
-    }), ce = () => {
-      var t;
-      return ((t = i.value) == null ? void 0 : t.getContext("2d")) || null;
-    }, X = (t, o) => {
-      const g = i.value, f = g.getBoundingClientRect(), d = g.width / f.width, y = g.height / f.height;
+    }), G = () => {
+      var e;
+      return ((e = i.value) == null ? void 0 : e.getContext("2d")) || null;
+    }, L = (e, o) => {
+      const g = i.value, f = g.getBoundingClientRect(), u = g.width / f.width, y = g.height / f.height;
       return {
-        x: (t - f.left) * d,
+        x: (e - f.left) * u,
         y: (o - f.top) * y,
         time: Date.now()
       };
-    }, ue = (t) => {
-      if (!A.value)
+    }, de = (e) => {
+      if (!F.value)
         return;
       h.value = !0;
-      const o = performance.now(), g = { ...t, time: o };
+      const o = performance.now(), g = { ...e, time: o };
       c.value = {
         points: [g],
         strokeColor: n.strokeColor,
@@ -928,467 +943,495 @@ const bt = ["width", "height"], Tt = {
         endTime: o,
         duration: 0
       }, s("signature-start");
-    }, G = (t, o, g, f) => {
+    }, Q = (e, o, g, f) => {
       switch (g) {
         case "pen":
           return 1;
         case "brush":
           if (o) {
-            const D = Math.sqrt(Math.pow(t.x - o.x, 2) + Math.pow(t.y - o.y, 2)), O = Math.max(1, (t.time || 0) - (o.time || 0)), F = D / O, H = Math.max(0.1, Math.min(3, 100 / Math.max(F, 1))), V = t.pressure || 0.5, Y = 0.8 + Math.random() * 0.4;
-            return Math.max(1, Math.min(20, f * H * (0.3 + V * 1.4) * Y));
+            const S = Math.sqrt(Math.pow(e.x - o.x, 2) + Math.pow(e.y - o.y, 2)), J = Math.max(1, (e.time || 0) - (o.time || 0)), W = S / J, q = Math.max(0.1, Math.min(3, 100 / Math.max(W, 1))), B = e.pressure || 0.5, X = 0.8 + Math.random() * 0.4;
+            return Math.max(1, Math.min(20, f * q * (0.3 + B * 1.4) * X));
           }
           return f;
         case "marker":
           return 12;
         case "pencil":
-          const d = t.pressure || 0.5, y = 0.9 + Math.random() * 0.2;
-          return f * (0.7 + d * 0.6) * y;
+          const u = e.pressure || 0.5, y = 0.9 + Math.random() * 0.2;
+          return f * (0.7 + u * 0.6) * y;
         case "ballpoint":
-          const x = t.pressure || 0.5;
-          return f * (0.8 + x * 0.4);
+          const M = e.pressure || 0.5;
+          return f * (0.8 + M * 0.4);
         case "elegant":
-          const b = t.pressure || 0.5;
-          let C = 1;
+          const w = e.pressure || 0.5;
+          let b = 1;
           if (o) {
-            const D = Math.sqrt(Math.pow(t.x - o.x, 2) + Math.pow(t.y - o.y, 2)), O = Math.max(1, (t.time || 0) - (o.time || 0)), F = D / O;
-            C = Math.max(0.3, Math.min(2, 50 / Math.max(F, 1)));
+            const S = Math.sqrt(Math.pow(e.x - o.x, 2) + Math.pow(e.y - o.y, 2)), J = Math.max(1, (e.time || 0) - (o.time || 0)), W = S / J;
+            b = Math.max(0.3, Math.min(2, 50 / Math.max(W, 1)));
           }
-          const W = b * C;
-          return f * (0.4 + W * 1.6);
+          const R = w * b;
+          return f * (0.4 + R * 1.6);
         default:
           return f;
       }
-    }, Q = (t, o, g) => {
+    }, K = (e, o, g) => {
       var f;
       if (!(o.length < 2))
-        switch (t.strokeStyle = ((f = c.value) == null ? void 0 : f.strokeColor) || I.value.strokeColor, t.lineCap = I.value.lineCap || "round", t.lineJoin = I.value.lineJoin || "round", g) {
+        switch (e.strokeStyle = ((f = c.value) == null ? void 0 : f.strokeColor) || I.value.strokeColor, e.lineCap = I.value.lineCap || "round", e.lineJoin = I.value.lineJoin || "round", g) {
           case "pen":
-            if (t.lineWidth = 1, t.lineCap = "butt", t.lineJoin = "miter", t.beginPath(), t.moveTo(o[0].x, o[0].y), o.length >= 3) {
-              for (let d = 1; d < o.length - 1; d++) {
-                const y = de(o[d], o[d - 1], o[d + 1]);
-                t.quadraticCurveTo(y.x, y.y, o[d].x, o[d].y);
+            if (e.lineWidth = 1, e.lineCap = "butt", e.lineJoin = "miter", e.beginPath(), e.moveTo(o[0].x, o[0].y), o.length >= 3) {
+              for (let u = 1; u < o.length - 1; u++) {
+                const y = me(o[u], o[u - 1], o[u + 1]);
+                e.quadraticCurveTo(y.x, y.y, o[u].x, o[u].y);
               }
-              t.lineTo(o[o.length - 1].x, o[o.length - 1].y);
+              e.lineTo(o[o.length - 1].x, o[o.length - 1].y);
             } else
-              for (let d = 1; d < o.length; d++)
-                t.lineTo(o[d].x, o[d].y);
-            t.stroke();
+              for (let u = 1; u < o.length; u++)
+                e.lineTo(o[u].x, o[u].y);
+            e.stroke();
             break;
           case "brush":
-            t.lineCap = "round", t.lineJoin = "round";
-            for (let d = 1; d < o.length; d++) {
-              const y = o[d], x = o[d - 1], b = G(y, x, g, I.value.strokeWidth), C = t.createLinearGradient(x.x, x.y, y.x, y.y);
-              C.addColorStop(0, t.strokeStyle), C.addColorStop(1, t.strokeStyle), t.lineWidth = b, t.beginPath(), t.moveTo(x.x, x.y), t.lineTo(y.x, y.y), t.stroke(), b > 8 && Math.random() > 0.6 && (t.globalAlpha = 0.2, t.beginPath(), t.arc(y.x, y.y, b * 0.3, 0, Math.PI * 2), t.fill(), t.globalAlpha = 1);
+            e.lineCap = "round", e.lineJoin = "round";
+            for (let u = 1; u < o.length; u++) {
+              const y = o[u], M = o[u - 1], w = Q(y, M, g, I.value.strokeWidth), b = e.createLinearGradient(M.x, M.y, y.x, y.y);
+              b.addColorStop(0, e.strokeStyle), b.addColorStop(1, e.strokeStyle), e.lineWidth = w, e.beginPath(), e.moveTo(M.x, M.y), e.lineTo(y.x, y.y), e.stroke(), w > 8 && Math.random() > 0.6 && (e.globalAlpha = 0.2, e.beginPath(), e.arc(y.x, y.y, w * 0.3, 0, Math.PI * 2), e.fill(), e.globalAlpha = 1);
             }
             break;
           case "marker":
-            t.globalAlpha = 0.7, t.lineWidth = 12, t.lineCap = "square", t.lineJoin = "bevel", t.beginPath(), t.moveTo(o[0].x, o[0].y);
-            for (let d = 1; d < o.length; d++)
-              t.lineTo(o[d].x, o[d].y);
-            t.stroke(), t.globalAlpha = 0.3, t.lineWidth = 16, t.beginPath(), t.moveTo(o[0].x, o[0].y);
-            for (let d = 1; d < o.length; d++)
-              t.lineTo(o[d].x, o[d].y);
-            t.stroke(), t.globalAlpha = 1;
+            e.globalAlpha = 0.7, e.lineWidth = 12, e.lineCap = "square", e.lineJoin = "bevel", e.beginPath(), e.moveTo(o[0].x, o[0].y);
+            for (let u = 1; u < o.length; u++)
+              e.lineTo(o[u].x, o[u].y);
+            e.stroke(), e.globalAlpha = 0.3, e.lineWidth = 16, e.beginPath(), e.moveTo(o[0].x, o[0].y);
+            for (let u = 1; u < o.length; u++)
+              e.lineTo(o[u].x, o[u].y);
+            e.stroke(), e.globalAlpha = 1;
             break;
           case "pencil":
-            t.lineCap = "round", t.lineJoin = "round";
-            for (let d = 1; d < o.length; d++) {
-              const y = o[d], x = o[d - 1], b = G(y, x, g, I.value.strokeWidth);
-              t.lineWidth = b, t.globalAlpha = 0.8, t.beginPath(), t.moveTo(x.x, x.y), t.lineTo(y.x, y.y), t.stroke();
-              for (let C = 0; C < 3; C++)
+            e.lineCap = "round", e.lineJoin = "round";
+            for (let u = 1; u < o.length; u++) {
+              const y = o[u], M = o[u - 1], w = Q(y, M, g, I.value.strokeWidth);
+              e.lineWidth = w, e.globalAlpha = 0.8, e.beginPath(), e.moveTo(M.x, M.y), e.lineTo(y.x, y.y), e.stroke();
+              for (let b = 0; b < 3; b++)
                 if (Math.random() > 0.5) {
-                  t.globalAlpha = 0.2, t.lineWidth = b * 0.3;
-                  const W = (Math.random() - 0.5) * 2, D = (Math.random() - 0.5) * 2;
-                  t.beginPath(), t.moveTo(x.x + W, x.y + D), t.lineTo(y.x + W, y.y + D), t.stroke();
+                  e.globalAlpha = 0.2, e.lineWidth = w * 0.3;
+                  const R = (Math.random() - 0.5) * 2, S = (Math.random() - 0.5) * 2;
+                  e.beginPath(), e.moveTo(M.x + R, M.y + S), e.lineTo(y.x + R, y.y + S), e.stroke();
                 }
               if (Math.random() > 0.8) {
-                t.globalAlpha = 0.4;
-                for (let C = 0; C < 5; C++)
-                  t.beginPath(), t.arc(
+                e.globalAlpha = 0.4;
+                for (let b = 0; b < 5; b++)
+                  e.beginPath(), e.arc(
                     y.x + (Math.random() - 0.5) * 3,
                     y.y + (Math.random() - 0.5) * 3,
                     Math.random() * 0.8,
                     0,
                     Math.PI * 2
-                  ), t.fill();
+                  ), e.fill();
               }
             }
-            t.globalAlpha = 1;
+            e.globalAlpha = 1;
             break;
           case "ballpoint":
-            t.lineCap = "round", t.lineJoin = "round";
-            for (let d = 1; d < o.length; d++) {
-              const y = o[d], x = o[d - 1], b = G(y, x, g, I.value.strokeWidth);
+            e.lineCap = "round", e.lineJoin = "round";
+            for (let u = 1; u < o.length; u++) {
+              const y = o[u], M = o[u - 1], w = Q(y, M, g, I.value.strokeWidth);
               if (Math.random() > 0.1) {
-                if (t.lineWidth = b, t.globalAlpha = Math.random() > 0.2 ? 1 : 0.7, t.beginPath(), I.value.smoothing && d < o.length - 1) {
-                  const C = o[d + 1], W = de(y, x, C);
-                  t.moveTo(x.x, x.y), t.quadraticCurveTo(W.x, W.y, y.x, y.y);
+                if (e.lineWidth = w, e.globalAlpha = Math.random() > 0.2 ? 1 : 0.7, e.beginPath(), I.value.smoothing && u < o.length - 1) {
+                  const b = o[u + 1], R = me(y, M, b);
+                  e.moveTo(M.x, M.y), e.quadraticCurveTo(R.x, R.y, y.x, y.y);
                 } else
-                  t.moveTo(x.x, x.y), t.lineTo(y.x, y.y);
-                t.stroke();
+                  e.moveTo(M.x, M.y), e.lineTo(y.x, y.y);
+                e.stroke();
               }
-              Math.random() > 0.95 && (t.globalAlpha = 0.8, t.beginPath(), t.arc(y.x, y.y, b * 0.8, 0, Math.PI * 2), t.fill());
+              Math.random() > 0.95 && (e.globalAlpha = 0.8, e.beginPath(), e.arc(y.x, y.y, w * 0.8, 0, Math.PI * 2), e.fill());
             }
-            t.globalAlpha = 1;
+            e.globalAlpha = 1;
             break;
           case "elegant":
-            Be(t, o);
+            Xe(e, o);
             break;
         }
-    }, ze = () => {
+    }, Ve = () => {
       if (!c.value || c.value.points.length < 2)
         return;
-      const t = ce();
-      if (!t)
+      const e = G();
+      if (e) {
+        e.clearRect(0, 0, k.value, D.value);
+        for (const o of r.value.paths)
+          o !== c.value && Z(e, o);
+        c.value.points.length >= 2 && Z(e, c.value);
+      }
+    }, Ye = () => {
+      if (!c.value || c.value.points.length < 2)
+        return;
+      const e = G();
+      if (!e)
         return;
       const o = c.value.points, g = o.length, f = n.penStyle || "pen";
       if (g === 2)
-        Q(t, o, f);
+        K(e, o, f);
       else if (g >= 3) {
-        const d = o.slice(-3);
-        Q(t, d, f);
+        const u = o.slice(-3);
+        K(e, u, f);
       }
-    }, Be = (t, o) => {
-      var f, d;
+    }, Xe = (e, o) => {
+      var f, u;
       if (o.length < 2)
         return;
-      t.strokeStyle = ((f = c.value) == null ? void 0 : f.strokeColor) || I.value.strokeColor, t.fillStyle = ((d = c.value) == null ? void 0 : d.strokeColor) || I.value.strokeColor, t.lineCap = "round", t.lineJoin = "round", t.globalCompositeOperation = "source-over";
-      const g = Ve(o, I.value.strokeWidth);
-      Ye(t, g), Le(t, g);
-    }, Ve = (t, o) => {
+      e.strokeStyle = ((f = c.value) == null ? void 0 : f.strokeColor) || I.value.strokeColor, e.fillStyle = ((u = c.value) == null ? void 0 : u.strokeColor) || I.value.strokeColor, e.lineCap = "round", e.lineJoin = "round", e.globalCompositeOperation = "source-over";
+      const g = Le(o, I.value.strokeWidth);
+      Ue(e, g), Ne(e, g);
+    }, Le = (e, o) => {
       const g = [];
-      for (let f = 0; f < t.length; f++) {
-        const d = t[f];
-        let y = 0, x = o;
+      for (let f = 0; f < e.length; f++) {
+        const u = e[f];
+        let y = 0, M = o;
         if (f > 0) {
-          const C = t[f - 1], W = Math.sqrt(
-            Math.pow(d.x - C.x, 2) + Math.pow(d.y - C.y, 2)
-          ), D = Math.max(1, (d.time || 0) - (C.time || 0));
-          y = W / D;
-          const O = d.pressure || 0.5, F = Math.max(0.2, Math.min(3, 100 / Math.max(y, 1)));
-          x = o * (0.3 + O * F * 1.4);
+          const b = e[f - 1], R = Math.sqrt(
+            Math.pow(u.x - b.x, 2) + Math.pow(u.y - b.y, 2)
+          ), S = Math.max(1, (u.time || 0) - (b.time || 0));
+          y = R / S;
+          const J = u.pressure || 0.5, W = Math.max(0.2, Math.min(3, 100 / Math.max(y, 1)));
+          M = o * (0.3 + J * W * 1.4);
         }
-        let b = x;
+        let w = M;
         if (f > 0) {
-          const C = g[f - 1].smoothedWidth;
-          b = C + (x - C) * 0.3;
+          const b = g[f - 1].smoothedWidth;
+          w = b + (M - b) * 0.3;
         }
         g.push({
-          ...d,
+          ...u,
           velocity: y,
-          dynamicWidth: x,
-          smoothedWidth: Math.max(0.5, Math.min(o * 3, b))
+          dynamicWidth: M,
+          smoothedWidth: Math.max(0.5, Math.min(o * 3, w))
         });
       }
       return g;
-    }, Ye = (t, o) => {
+    }, Ue = (e, o) => {
       if (!(o.length < 2))
         for (let g = 1; g < o.length; g++) {
-          const f = o[g], d = o[g - 1];
-          Xe(t, d, f, d.smoothedWidth, f.smoothedWidth);
+          const f = o[g], u = o[g - 1];
+          He(e, u, f, u.smoothedWidth, f.smoothedWidth);
         }
-    }, Xe = (t, o, g, f, d) => {
+    }, He = (e, o, g, f, u) => {
       const y = Math.sqrt(
         Math.pow(g.x - o.x, 2) + Math.pow(g.y - o.y, 2)
-      ), x = Math.max(2, Math.min(10, Math.floor(y / 3)));
-      t.beginPath();
-      const b = [];
-      for (let C = 0; C <= x; C++) {
-        const W = C / x, D = Ue(W), O = o.x + (g.x - o.x) * D, F = o.y + (g.y - o.y) * D, H = f + (d - f) * D, V = g.x - o.x, Y = g.y - o.y, Z = Math.sqrt(V * V + Y * Y);
-        if (Z > 0) {
-          const ee = -Y / Z * H / 2, te = V / Z * H / 2;
-          C === 0 ? t.moveTo(O + ee, F + te) : t.lineTo(O + ee, F + te), b.push({ x: O - ee, y: F - te });
+      ), M = Math.max(2, Math.min(10, Math.floor(y / 3)));
+      e.beginPath();
+      const w = [];
+      for (let b = 0; b <= M; b++) {
+        const R = b / M, S = je(R), J = o.x + (g.x - o.x) * S, W = o.y + (g.y - o.y) * S, q = f + (u - f) * S, B = g.x - o.x, X = g.y - o.y, te = Math.sqrt(B * B + X * X);
+        if (te > 0) {
+          const ae = -X / te * q / 2, ne = B / te * q / 2;
+          b === 0 ? e.moveTo(J + ae, W + ne) : e.lineTo(J + ae, W + ne), w.push({ x: J - ae, y: W - ne });
         }
       }
-      for (let C = b.length - 1; C >= 0; C--)
-        t.lineTo(b[C].x, b[C].y);
-      t.closePath(), t.fill();
-    }, Le = (t, o) => {
+      for (let b = w.length - 1; b >= 0; b--)
+        e.lineTo(w[b].x, w[b].y);
+      e.closePath(), e.fill();
+    }, Ne = (e, o) => {
       for (let g = 1; g < o.length - 1; g++) {
-        const f = o[g - 1], d = o[g], y = o[g + 1], x = Math.abs(d.velocity - f.velocity), b = (d.velocity + f.velocity) / 2, C = Math.atan2(d.y - f.y, d.x - f.x), W = Math.atan2(y.y - d.y, y.x - d.x), D = Math.abs(W - C);
-        if (x > b * 0.5 || D > 0.2) {
-          const O = d.smoothedWidth * 0.4;
-          t.beginPath(), t.arc(d.x, d.y, O, 0, Math.PI * 2), t.fill();
+        const f = o[g - 1], u = o[g], y = o[g + 1], M = Math.abs(u.velocity - f.velocity), w = (u.velocity + f.velocity) / 2, b = Math.atan2(u.y - f.y, u.x - f.x), R = Math.atan2(y.y - u.y, y.x - u.x);
+        let S = Math.abs(R - b);
+        if (S > Math.PI && (S = 2 * Math.PI - S), M > w * 0.3 || S > 0.15) {
+          const W = u.smoothedWidth * 0.6, q = e.createRadialGradient(
+            u.x,
+            u.y,
+            0,
+            u.x,
+            u.y,
+            W
+          );
+          q.addColorStop(0, e.fillStyle), q.addColorStop(1, "transparent");
+          const B = e.fillStyle;
+          e.fillStyle = q, e.beginPath(), e.arc(u.x, u.y, W, 0, Math.PI * 2), e.fill(), e.fillStyle = B;
+        }
+        if (S > 0.05) {
+          const W = u.smoothedWidth * 0.2;
+          e.beginPath(), e.arc(u.x, u.y, W, 0, Math.PI * 2), e.fill();
         }
       }
-    }, Ue = (t) => t * t * (3 - 2 * t), de = (t, o, g) => {
-      const d = {
+    }, je = (e) => e * e * (3 - 2 * e), me = (e, o, g) => {
+      const u = {
         length: Math.sqrt(Math.pow(g.x - o.x, 2) + Math.pow(g.y - o.y, 2)),
         angle: Math.atan2(g.y - o.y, g.x - o.x)
-      }, y = d.angle + Math.PI, x = d.length * 0.2;
+      }, y = u.angle + Math.PI, M = u.length * 0.2;
       return {
-        x: t.x + Math.cos(y) * x,
-        y: t.y + Math.sin(y) * x,
-        time: t.time || 0
+        x: e.x + Math.cos(y) * M,
+        y: e.y + Math.sin(y) * M,
+        time: e.time || 0
       };
-    }, He = (t, o) => {
+    }, Z = (e, o) => {
       if (o.points.length < 2)
         return;
       const g = o.penStyle || n.penStyle || "pen", f = c.value;
-      c.value = o, Q(t, o.points, g), c.value = f;
-    }, me = (t) => {
-      if (!h.value || !c.value || !A.value)
+      c.value = o, K(e, o.points, g), c.value = f;
+    }, ge = (e) => {
+      if (!h.value || !c.value || !F.value)
         return;
-      const o = performance.now(), g = { ...t, time: o };
-      c.value.points.push(g), c.value.startTime && (c.value.endTime = o, c.value.duration = o - c.value.startTime), ze(), ye(), s("signature-drawing", r.value);
-    }, ge = () => {
+      const o = performance.now();
+      if (o - v.value < Bt)
+        return;
+      v.value = o;
+      const g = { ...e, time: o };
+      c.value.points.push(g), c.value.startTime && (c.value.endTime = o, c.value.duration = o - c.value.startTime), n.realTimeMode ? Ve() : Ye(), ve(), s("signature-drawing", r.value);
+    }, pe = () => {
       if (!(!h.value || !c.value)) {
         if (h.value = !1, c.value.points.length > 0) {
-          const t = c.value.points[c.value.points.length - 1];
-          t.time && c.value.startTime && (c.value.endTime = t.time, c.value.duration = t.time - c.value.startTime);
+          const e = c.value.points[c.value.points.length - 1];
+          e.time && c.value.startTime && (c.value.endTime = e.time, c.value.duration = e.time - c.value.startTime);
         }
-        r.value.paths.push(c.value), r.value.isEmpty = !1, r.value.timestamp = Date.now(), L(), q(), c.value = null, s("signature-end", r.value);
+        r.value.paths.push(c.value), r.value.isEmpty = !1, r.value.timestamp = Date.now(), U(), $(), c.value = null, s("signature-end", r.value);
       }
-    }, Ne = (t) => {
-      t.preventDefault();
-      const o = X(t.clientX, t.clientY);
-      ue(o);
-    }, je = (t) => {
-      if (t.preventDefault(), !h.value)
+    }, Ge = (e) => {
+      e.preventDefault();
+      const o = L(e.clientX, e.clientY);
+      de(o);
+    }, Qe = (e) => {
+      if (e.preventDefault(), !h.value)
         return;
-      const o = X(t.clientX, t.clientY);
-      me(o);
-    }, pe = (t) => {
-      t.preventDefault(), ge();
-    }, Ge = (t) => {
-      if (t.preventDefault(), t.touches.length !== 1)
+      const o = L(e.clientX, e.clientY);
+      ge(o);
+    }, fe = (e) => {
+      e.preventDefault(), pe();
+    }, Ke = (e) => {
+      if (e.preventDefault(), e.touches.length !== 1)
         return;
-      const o = t.touches[0], g = X(o.clientX, o.clientY);
-      ue(g);
-    }, Qe = (t) => {
-      if (t.preventDefault(), t.touches.length !== 1 || !h.value)
+      const o = e.touches[0], g = L(o.clientX, o.clientY);
+      de(g);
+    }, Ze = (e) => {
+      if (e.preventDefault(), e.touches.length !== 1 || !h.value)
         return;
-      const o = t.touches[0], g = X(o.clientX, o.clientY);
-      me(g);
-    }, fe = (t) => {
-      t.preventDefault(), ge();
-    }, ye = () => {
+      const o = e.touches[0], g = L(o.clientX, o.clientY);
+      ge(g);
+    }, ye = (e) => {
+      e.preventDefault(), pe();
+    }, ve = () => {
       r.value.canvasSize = {
-        width: P.value,
-        height: S.value
+        width: k.value,
+        height: D.value
       }, r.value.isEmpty = N(r.value);
-    }, L = () => {
-      m.value = m.value.slice(0, p.value + 1), m.value.push(B(r.value)), p.value = m.value.length - 1;
-      const t = 50;
-      m.value.length > t && (m.value = m.value.slice(-t), p.value = m.value.length - 1);
-    }, q = () => {
-      const t = ce();
-      t && (t.clearRect(0, 0, P.value, S.value), n.backgroundColor && n.backgroundColor !== "transparent" && (t.fillStyle = n.backgroundColor, t.fillRect(0, 0, P.value, S.value)), r.value.paths.forEach((o) => {
-        o.points.length > 0 && He(t, o);
-      }));
     }, U = () => {
+      m.value = m.value.slice(0, p.value + 1), m.value.push(Y(r.value)), p.value = m.value.length - 1;
+      const e = 50;
+      m.value.length > e && (m.value = m.value.slice(-e), p.value = m.value.length - 1);
+    }, $ = () => {
+      const e = G();
+      e && (e.clearRect(0, 0, k.value, D.value), n.backgroundColor && n.backgroundColor !== "transparent" && (e.fillStyle = n.backgroundColor, e.fillRect(0, 0, k.value, D.value)), r.value.paths.forEach((o) => {
+        o.points.length > 0 && Z(e, o);
+      }));
+    }, H = () => {
       if (console.log("初始化回放控制器"), console.log("canvas引用是否存在:", !!i.value), !i.value) {
         console.error("canvas引用不存在，无法初始化回放控制器");
         return;
       }
-      u.value && (console.log("销毁现有回放控制器"), u.value.destroy()), console.log("创建新的回放控制器"), u.value = new ft(i.value), console.log("回放控制器创建成功:", !!u.value), u.value.on("replay-start", () => {
-        v.value = "playing", s("replay-start");
-      }), u.value.on("replay-progress", (t, o) => {
-        M.value = t, R.value = o, s("replay-progress", t, o);
-      }), u.value.on("replay-pause", () => {
-        v.value = "paused", s("replay-pause");
-      }), u.value.on("replay-resume", () => {
-        v.value = "playing", s("replay-resume");
-      }), u.value.on("replay-stop", () => {
-        v.value = "stopped", s("replay-stop");
-      }), u.value.on("replay-complete", () => {
-        v.value = "completed", s("replay-complete");
-      }), u.value.on("replay-path-start", (t, o) => {
-        s("replay-path-start", t, o);
-      }), u.value.on("replay-path-end", (t, o) => {
-        s("replay-path-end", t, o);
-      }), u.value.on("replay-speed-change", (t) => {
-        s("replay-speed-change", t);
+      d.value && (console.log("销毁现有回放控制器"), d.value.destroy()), console.log("创建新的回放控制器"), d.value = new vt(i.value), console.log("回放控制器创建成功:", !!d.value), d.value.on("replay-start", () => {
+        C.value = "playing", s("replay-start");
+      }), d.value.on("replay-progress", (e, o) => {
+        _.value = e, A.value = o, s("replay-progress", e, o);
+      }), d.value.on("replay-pause", () => {
+        C.value = "paused", s("replay-pause");
+      }), d.value.on("replay-resume", () => {
+        C.value = "playing", s("replay-resume");
+      }), d.value.on("replay-stop", () => {
+        C.value = "stopped", s("replay-stop");
+      }), d.value.on("replay-complete", () => {
+        C.value = "completed", s("replay-complete");
+      }), d.value.on("replay-path-start", (e, o) => {
+        s("replay-path-start", e, o);
+      }), d.value.on("replay-path-end", (e, o) => {
+        s("replay-path-end", e, o);
+      }), d.value.on("replay-speed-change", (e) => {
+        s("replay-speed-change", e);
       });
-    }, ve = (t, o) => {
-      if (u.value || U(), u.value) {
-        w.value = !0;
+    }, xe = (e, o) => {
+      if (d.value || H(), d.value) {
+        x.value = !0;
         const g = {
           ...o,
           drawOptions: I.value,
           penStyle: n.penStyle
         };
-        u.value.setReplayData(t, g), console.log("startReplay调用，自动播放:", o == null ? void 0 : o.autoPlay), (o == null ? void 0 : o.autoPlay) === !0 && u.value.play();
+        d.value.setReplayData(e, g), console.log("startReplay调用，自动播放:", o == null ? void 0 : o.autoPlay), (o == null ? void 0 : o.autoPlay) === !0 && d.value.play();
       }
-    }, xe = (t) => {
-      w.value = t, !t && u.value && (u.value.stop(), q());
-    }, Ke = () => N(r.value) ? null : yt(r.value), Ce = () => {
-      console.log("play方法被调用"), console.log("回放控制器是否存在:", !!u.value), u.value || (console.log("回放控制器不存在，尝试初始化"), U()), u.value ? (console.log("调用回放控制器的play方法"), u.value.play()) : console.error("回放控制器初始化失败，无法播放");
+    }, Ce = (e) => {
+      x.value = e, !e && d.value && (d.value.stop(), $());
+    }, et = () => N(r.value) ? null : xt(r.value), Me = () => {
+      console.log("play方法被调用"), console.log("回放控制器是否存在:", !!d.value), d.value || (console.log("回放控制器不存在，尝试初始化"), H()), d.value ? (console.log("调用回放控制器的play方法"), d.value.play()) : console.error("回放控制器初始化失败，无法播放");
+    }, be = () => {
+      var e;
+      (e = d.value) == null || e.pause();
     }, we = () => {
-      var t;
-      (t = u.value) == null || t.pause();
-    }, Me = () => {
-      var t;
-      (t = u.value) == null || t.stop();
-    }, be = (t) => {
+      var e;
+      (e = d.value) == null || e.stop();
+    }, Te = (e) => {
       var o;
-      (o = u.value) == null || o.seek(t);
-    }, Te = (t) => {
+      (o = d.value) == null || o.seek(e);
+    }, ke = (e) => {
       var o;
-      (o = u.value) == null || o.setSpeed(t);
-    }, Ze = () => {
-      var t;
-      return ((t = u.value) == null ? void 0 : t.getState()) || "idle";
-    }, et = () => {
-      var t;
-      return ((t = u.value) == null ? void 0 : t.getCurrentTime()) || 0;
-    }, K = () => {
-      var t;
-      return ((t = u.value) == null ? void 0 : t.getTotalDuration()) || 0;
+      (o = d.value) == null || o.setSpeed(e);
     }, tt = () => {
-      var t;
-      return ((t = u.value) == null ? void 0 : t.getProgress()) || 0;
-    }, ke = (t) => {
-      const o = Math.floor(t / 1e3), g = Math.floor(o / 60), f = o % 60;
+      var e;
+      return ((e = d.value) == null ? void 0 : e.getState()) || "idle";
+    }, at = () => {
+      var e;
+      return ((e = d.value) == null ? void 0 : e.getCurrentTime()) || 0;
+    }, ee = () => {
+      var e;
+      return ((e = d.value) == null ? void 0 : e.getTotalDuration()) || 0;
+    }, nt = () => {
+      var e;
+      return ((e = d.value) == null ? void 0 : e.getProgress()) || 0;
+    }, Se = (e) => {
+      const o = Math.floor(e / 1e3), g = Math.floor(o / 60), f = o % 60;
       return `${g}:${f.toString().padStart(2, "0")}`;
-    }, Se = () => {
-      A.value && (r.value = j(P.value, S.value), q(), L(), s("signature-clear"));
     }, Pe = () => {
-      !le.value || !A.value || (p.value--, r.value = B(m.value[p.value]), q(), s("signature-undo", r.value));
+      F.value && (r.value = j(k.value, D.value), $(), U(), s("signature-clear"));
     }, De = () => {
-      !re.value || !A.value || (p.value++, r.value = B(m.value[p.value]), q(), s("signature-redo", r.value));
-    }, We = (t) => {
+      !he.value || !F.value || (p.value--, r.value = Y(m.value[p.value]), $(), s("signature-undo", r.value));
+    }, We = () => {
+      !ce.value || !F.value || (p.value++, r.value = Y(m.value[p.value]), $(), s("signature-redo", r.value));
+    }, Re = (e) => {
       const o = i.value;
-      return gt(o, r.value, t);
-    }, Re = () => N(r.value), Ie = async (t) => {
-      if (!A.value)
+      return ft(o, r.value, e);
+    }, Ie = () => N(r.value), Ee = async (e) => {
+      if (!F.value)
         return;
       const o = i.value;
-      await pt(o, t), r.value = j(P.value, S.value), r.value.isEmpty = !1, L();
-    }, at = () => B(r.value), nt = (t) => {
-      A.value && (r.value = B(t), q(), L());
-    }, Ee = (t, o) => {
-      const g = t || P.value, f = o || S.value, d = We({ format: "png" });
-      ne(() => {
+      await yt(o, e), r.value = j(k.value, D.value), r.value.isEmpty = !1, U();
+    }, ot = () => Y(r.value), st = (e) => {
+      F.value && (r.value = Y(e), $(), U());
+    }, Oe = (e, o) => {
+      const g = e || k.value, f = o || D.value, u = Re({ format: "png" });
+      se(() => {
         const y = i.value;
-        y.width = g, y.height = f, Re() || Ie(d), ye();
+        y.width = g, y.height = f, Ie() || Ee(u), ve();
       });
-    }, ot = () => {
-      const t = i.value;
-      t.width = P.value, t.height = S.value, r.value = j(P.value, S.value), m.value = [B(r.value)], p.value = 0, q();
+    }, it = () => {
+      const e = i.value;
+      e.width = k.value, e.height = D.value, r.value = j(k.value, D.value), m.value = [Y(r.value)], p.value = 0, $();
     };
-    return ae([() => n.width, () => n.height], () => {
-      ne(() => {
-        i.value && Ee();
+    return oe([() => n.width, () => n.height], () => {
+      se(() => {
+        i.value && Oe();
       });
-    }), ae(() => n.replayMode, (t) => {
-      t !== void 0 && xe(t);
-    }), ae(() => n.replayData, (t) => {
-      if (console.log("watch监听到回放数据变化:", t), console.log("当前回放模式:", n.replayMode), console.log("回放控制器是否存在:", !!u.value), t && n.replayMode)
-        if (u.value || (console.log("回放控制器未初始化，先初始化"), U()), u.value) {
+    }), oe(() => n.replayMode, (e) => {
+      e !== void 0 && Ce(e);
+    }), oe(() => n.replayData, (e) => {
+      if (console.log("watch监听到回放数据变化:", e), console.log("当前回放模式:", n.replayMode), console.log("回放控制器是否存在:", !!d.value), e && n.replayMode)
+        if (d.value || (console.log("回放控制器未初始化，先初始化"), H()), d.value) {
           console.log("开始设置回放数据到控制器");
           const o = {
             ...n.replayOptions,
             drawOptions: I.value,
             penStyle: n.penStyle
           };
-          u.value.setReplayData(t, o), console.log("回放数据已更新:", t);
+          d.value.setReplayData(e, o), console.log("回放数据已更新:", e);
         } else
           console.error("回放控制器初始化失败");
       else
-        t || console.log("回放数据为空，跳过设置"), n.replayMode || console.log("不在回放模式，跳过设置");
-    }, { immediate: !0 }), rt(() => {
-      ne(() => {
-        ot(), U(), n.replayMode && n.replayData && ve(n.replayData, n.replayOptions);
+        e || console.log("回放数据为空，跳过设置"), n.replayMode || console.log("不在回放模式，跳过设置");
+    }, { immediate: !0 }), ct(() => {
+      se(() => {
+        it(), H(), n.replayMode && n.replayData && xe(n.replayData, n.replayOptions);
       });
-    }), ht(() => {
-      u.value && (u.value.destroy(), u.value = null);
-    }), e({
-      clear: Se,
-      undo: Pe,
-      redo: De,
-      save: We,
-      isEmpty: Re,
-      fromDataURL: Ie,
-      getSignatureData: at,
-      setSignatureData: nt,
-      resize: Ee,
+    }), ut(() => {
+      d.value && (d.value.destroy(), d.value = null);
+    }), t({
+      clear: Pe,
+      undo: De,
+      redo: We,
+      save: Re,
+      isEmpty: Ie,
+      fromDataURL: Ee,
+      getSignatureData: ot,
+      setSignatureData: st,
+      resize: Oe,
       // 回放相关方法
-      startReplay: ve,
-      getReplayData: Ke,
-      setReplayMode: xe,
-      play: Ce,
-      pause: we,
-      stop: Me,
-      seek: be,
-      setSpeed: Te,
-      getState: Ze,
-      getCurrentTime: et,
-      getTotalDuration: K,
-      getProgress: tt
-    }), (t, o) => ($(), z("div", {
+      startReplay: xe,
+      getReplayData: et,
+      setReplayMode: Ce,
+      play: Me,
+      pause: be,
+      stop: we,
+      seek: Te,
+      setSpeed: ke,
+      getState: tt,
+      getCurrentTime: at,
+      getTotalDuration: ee,
+      getProgress: nt
+    }), (e, o) => (z(), V("div", {
       class: "electronic-signature",
-      style: oe(J.value)
+      style: ie(Je.value)
     }, [
       T("canvas", {
         ref_key: "canvasRef",
         ref: i,
-        width: P.value,
-        height: S.value,
-        style: oe(Fe.value),
-        onMousedown: Ne,
-        onMousemove: je,
-        onMouseup: pe,
-        onMouseleave: pe,
-        onTouchstart: Ge,
-        onTouchmove: Qe,
-        onTouchend: fe,
-        onTouchcancel: fe
-      }, null, 44, bt),
-      qe.value ? ($(), z("div", {
+        width: k.value,
+        height: D.value,
+        style: ie(qe.value),
+        onMousedown: Ge,
+        onMousemove: Qe,
+        onMouseup: fe,
+        onMouseleave: fe,
+        onTouchstart: Ke,
+        onTouchmove: Ze,
+        onTouchend: ye,
+        onTouchcancel: ye
+      }, null, 44, kt),
+      Be.value ? (z(), V("div", {
         key: 0,
         class: "signature-placeholder",
-        style: oe(Je.value)
-      }, se(t.placeholder), 5)) : ie("", !0),
-      t.showToolbar ? ($(), z("div", Tt, [
-        T("button", {
-          onClick: Se,
-          disabled: !A.value
-        }, "清除", 8, kt),
+        style: ie($e.value)
+      }, le(e.placeholder), 5)) : re("", !0),
+      e.showToolbar ? (z(), V("div", St, [
         T("button", {
           onClick: Pe,
-          disabled: !A.value || !le.value
-        }, "撤销", 8, St),
+          disabled: !F.value
+        }, "清除", 8, Pt),
         T("button", {
           onClick: De,
-          disabled: !A.value || !re.value
-        }, "重做", 8, Pt)
-      ])) : ie("", !0),
-      $e.value ? ($(), z("div", Dt, [
-        T("div", Wt, [
+          disabled: !F.value || !he.value
+        }, "撤销", 8, Dt),
+        T("button", {
+          onClick: We,
+          disabled: !F.value || !ce.value
+        }, "重做", 8, Wt)
+      ])) : re("", !0),
+      ze.value ? (z(), V("div", Rt, [
+        T("div", It, [
           T("button", {
-            onClick: o[0] || (o[0] = (g) => v.value === "playing" ? we() : Ce()),
-            disabled: v.value === "idle",
+            onClick: o[0] || (o[0] = (g) => C.value === "playing" ? be() : Me()),
+            disabled: C.value === "idle",
             class: "replay-btn play-pause-btn"
           }, [
-            v.value === "playing" ? ($(), z("span", It, "⏸️")) : ($(), z("span", Et, "▶️"))
-          ], 8, Rt),
+            C.value === "playing" ? (z(), V("span", Ot, "⏸️")) : (z(), V("span", _t, "▶️"))
+          ], 8, Et),
           T("button", {
-            onClick: o[1] || (o[1] = (g) => Me()),
-            disabled: v.value === "idle",
+            onClick: o[1] || (o[1] = (g) => we()),
+            disabled: C.value === "idle",
             class: "replay-btn stop-btn"
-          }, " ⏹️ ", 8, Ot)
+          }, " ⏹️ ", 8, At)
         ]),
-        T("div", _t, [
+        T("div", Ft, [
           T("input", {
             type: "range",
             min: "0",
-            max: K(),
-            value: R.value,
-            onInput: o[2] || (o[2] = (g) => be(Number(g.target.value))),
+            max: ee(),
+            value: A.value,
+            onInput: o[2] || (o[2] = (g) => Te(Number(g.target.value))),
             class: "progress-slider",
-            disabled: v.value === "idle"
-          }, null, 40, At),
-          T("div", Ft, [
-            T("span", null, se(ke(R.value)), 1),
+            disabled: C.value === "idle"
+          }, null, 40, Jt),
+          T("div", qt, [
+            T("span", null, le(Se(A.value)), 1),
             o[4] || (o[4] = T("span", null, "/", -1)),
-            T("span", null, se(ke(K())), 1)
+            T("span", null, le(Se(ee())), 1)
           ])
         ]),
-        T("div", Jt, [
+        T("div", $t, [
           o[6] || (o[6] = T("label", null, "速度:", -1)),
           T("select", {
-            onChange: o[3] || (o[3] = (g) => Te(Number(g.target.value))),
+            onChange: o[3] || (o[3] = (g) => ke(Number(g.target.value))),
             class: "speed-select"
           }, o[5] || (o[5] = [
             T("option", { value: "0.5" }, "0.5x", -1),
@@ -1400,24 +1443,24 @@ const bt = ["width", "height"], Tt = {
             T("option", { value: "2" }, "2x", -1)
           ]), 32)
         ])
-      ])) : ie("", !0)
+      ])) : re("", !0)
     ], 4));
   }
 });
-const $t = (l, e) => {
+const Vt = (l, t) => {
   const a = l.__vccOpts || l;
-  for (const [n, s] of e)
+  for (const [n, s] of t)
     a[n] = s;
   return a;
-}, Ae = /* @__PURE__ */ $t(qt, [["__scopeId", "data-v-20a8ec18"]]);
-function zt() {
+}, Fe = /* @__PURE__ */ Vt(zt, [["__scopeId", "data-v-3010a1bd"]]);
+function Yt() {
   return window.devicePixelRatio || 1;
 }
-function Ht(l) {
-  const e = l.getContext("2d"), a = zt(), n = l.clientWidth, s = l.clientHeight;
-  return l.width = n * a, l.height = s * a, e.scale(a, a), l.style.width = n + "px", l.style.height = s + "px", e;
+function Gt(l) {
+  const t = l.getContext("2d"), a = Yt(), n = l.clientWidth, s = l.clientHeight;
+  return l.width = n * a, l.height = s * a, t.scale(a, a), l.style.width = n + "px", l.style.height = s + "px", t;
 }
-function Bt(l) {
+function Xt(l) {
   if (l.paths.length === 0)
     return {
       minX: 0,
@@ -1427,22 +1470,22 @@ function Bt(l) {
       width: 0,
       height: 0
     };
-  let e = 1 / 0, a = 1 / 0, n = -1 / 0, s = -1 / 0;
+  let t = 1 / 0, a = 1 / 0, n = -1 / 0, s = -1 / 0;
   return l.paths.forEach((i) => {
     i.points.forEach((h) => {
-      e = Math.min(e, h.x), a = Math.min(a, h.y), n = Math.max(n, h.x), s = Math.max(s, h.y);
+      t = Math.min(t, h.x), a = Math.min(a, h.y), n = Math.max(n, h.x), s = Math.max(s, h.y);
     });
   }), {
-    minX: e,
+    minX: t,
     minY: a,
     maxX: n,
     maxY: s,
-    width: n - e,
+    width: n - t,
     height: s - a
   };
 }
-function Nt(l, e, a = 10) {
-  const n = Bt(e);
+function Qt(l, t, a = 10) {
+  const n = Xt(t);
   if (n.width === 0 || n.height === 0) {
     const r = document.createElement("canvas");
     return r.width = 1, r.height = 1, r;
@@ -1460,16 +1503,16 @@ function Nt(l, e, a = 10) {
     c
   ), s;
 }
-function jt(l, e, a, n = !0) {
+function Kt(l, t, a, n = !0) {
   const s = document.createElement("canvas"), i = s.getContext("2d");
-  let h = e, c = a;
+  let h = t, c = a;
   if (n) {
-    const r = l.width / l.height, m = e / a;
-    r > m ? c = e / r : h = a * r;
+    const r = l.width / l.height, m = t / a;
+    r > m ? c = t / r : h = a * r;
   }
   return s.width = h, s.height = c, i.imageSmoothingEnabled = !0, i.imageSmoothingQuality = "high", i.drawImage(l, 0, 0, h, c), s;
 }
-function Gt(l, e, a = {}) {
+function Zt(l, t, a = {}) {
   const {
     fontSize: n = 12,
     fontFamily: s = "Arial",
@@ -1478,71 +1521,71 @@ function Gt(l, e, a = {}) {
     position: c = "bottom-right"
   } = a, r = document.createElement("canvas"), m = r.getContext("2d");
   r.width = l.width, r.height = l.height, m.drawImage(l, 0, 0), m.font = `${n}px ${s}`, m.fillStyle = i, m.globalAlpha = h;
-  const u = m.measureText(e).width, w = n;
-  let v, M;
+  const v = m.measureText(t).width, d = n;
+  let x, C;
   switch (c) {
     case "top-left":
-      v = 10, M = w + 10;
+      x = 10, C = d + 10;
       break;
     case "top-right":
-      v = l.width - u - 10, M = w + 10;
+      x = l.width - v - 10, C = d + 10;
       break;
     case "bottom-left":
-      v = 10, M = l.height - 10;
+      x = 10, C = l.height - 10;
       break;
     case "bottom-right":
-      v = l.width - u - 10, M = l.height - 10;
+      x = l.width - v - 10, C = l.height - 10;
       break;
     case "center":
-      v = (l.width - u) / 2, M = (l.height + w) / 2;
+      x = (l.width - v) / 2, C = (l.height + d) / 2;
       break;
     default:
-      v = l.width - u - 10, M = l.height - 10;
+      x = l.width - v - 10, C = l.height - 10;
   }
-  return m.fillText(e, v, M), m.globalAlpha = 1, r;
+  return m.fillText(t, x, C), m.globalAlpha = 1, r;
 }
-function Qt(l) {
-  const e = document.createElement("canvas"), a = e.getContext("2d");
-  e.width = l.width, e.height = l.height, a.drawImage(l, 0, 0);
+function ea(l) {
+  const t = document.createElement("canvas"), a = t.getContext("2d");
+  t.width = l.width, t.height = l.height, a.drawImage(l, 0, 0);
   const n = a.getImageData(0, 0, l.width, l.height), s = n.data;
   for (let i = 0; i < s.length; i += 4) {
     const h = s[i] * 0.299 + s[i + 1] * 0.587 + s[i + 2] * 0.114;
     s[i] = h, s[i + 1] = h, s[i + 2] = h;
   }
-  return a.putImageData(n, 0, 0), e;
+  return a.putImageData(n, 0, 0), t;
 }
-const Vt = (l) => {
-  l.component("ElectronicSignature", Ae);
-}, Kt = {
-  install: Vt,
-  ElectronicSignature: Ae
-}, Zt = "1.0.0";
+const Lt = (l) => {
+  l.component("ElectronicSignature", Fe);
+}, ta = {
+  install: Lt,
+  ElectronicSignature: Fe
+}, aa = "1.0.0";
 export {
-  Ae as ElectronicSignature,
-  _e as PEN_STYLE_CONFIGS,
-  ft as SignatureReplayController,
-  Gt as addWatermark,
-  dt as calculateStrokeWidth,
-  B as cloneSignatureData,
-  Qt as convertToGrayscale,
-  Mt as createDrawOptionsFromPenStyle,
+  Fe as ElectronicSignature,
+  Ae as PEN_STYLE_CONFIGS,
+  vt as SignatureReplayController,
+  Zt as addWatermark,
+  gt as calculateStrokeWidth,
+  Y as cloneSignatureData,
+  ea as convertToGrayscale,
+  Tt as createDrawOptionsFromPenStyle,
   j as createEmptySignatureData,
-  yt as createReplayData,
-  Nt as cropSignature,
-  Kt as default,
-  Lt as drawSmoothPath,
-  gt as exportSignature,
-  Ut as getAllPenStyles,
-  ct as getAngle,
-  ut as getControlPoint,
-  zt as getDevicePixelRatio,
-  Oe as getDistance,
+  xt as createReplayData,
+  Qt as cropSignature,
+  ta as default,
+  Nt as drawSmoothPath,
+  ft as exportSignature,
+  jt as getAllPenStyles,
+  dt as getAngle,
+  mt as getControlPoint,
+  Yt as getDevicePixelRatio,
+  _e as getDistance,
   wt as getPenStyleConfig,
-  Bt as getSignatureBounds,
+  Xt as getSignatureBounds,
   N as isSignatureEmpty,
-  pt as loadImageToCanvas,
-  jt as resizeSignature,
-  Ht as setupHighDPICanvas,
-  mt as signatureToSVG,
-  Zt as version
+  yt as loadImageToCanvas,
+  Kt as resizeSignature,
+  Gt as setupHighDPICanvas,
+  pt as signatureToSVG,
+  aa as version
 };
