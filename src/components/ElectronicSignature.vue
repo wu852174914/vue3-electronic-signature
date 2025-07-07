@@ -288,6 +288,71 @@ const startDrawing = (point: SignaturePoint): void => {
   emit('signature-start')
 }
 
+// 高效的增量绘制 - 只绘制新增的线段
+const drawIncrementalPath = (): void => {
+  if (!currentPath.value || currentPath.value.points.length < 2) return
+
+  const ctx = getContext()
+  if (!ctx) return
+
+  const points = currentPath.value.points
+  const pointCount = points.length
+
+  // 设置绘制样式
+  ctx.strokeStyle = currentPath.value.strokeColor
+  ctx.lineWidth = currentPath.value.strokeWidth
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  if (pointCount === 2) {
+    // 第一条线段，直接绘制
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    ctx.lineTo(points[1].x, points[1].y)
+    ctx.stroke()
+  } else if (pointCount >= 3) {
+    // 使用平滑曲线绘制新增部分
+    const prevPoint = points[pointCount - 3]
+    const currentPoint = points[pointCount - 2]
+    const nextPoint = points[pointCount - 1]
+
+    ctx.beginPath()
+
+    if (props.smoothing) {
+      // 平滑绘制 - 使用与回放相同的算法
+      ctx.moveTo(prevPoint.x, prevPoint.y)
+
+      // 计算控制点
+      const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
+      ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
+    } else {
+      // 直线绘制
+      ctx.moveTo(currentPoint.x, currentPoint.y)
+      ctx.lineTo(nextPoint.x, nextPoint.y)
+    }
+
+    ctx.stroke()
+  }
+}
+
+// 获取控制点（与回放算法一致）
+const getControlPointForDrawing = (current: SignaturePoint, previous: SignaturePoint, next: SignaturePoint): SignaturePoint => {
+  const smoothing = 0.2
+  const opposedLine = {
+    length: Math.sqrt(Math.pow(next.x - previous.x, 2) + Math.pow(next.y - previous.y, 2)),
+    angle: Math.atan2(next.y - previous.y, next.x - previous.x)
+  }
+
+  const angle = opposedLine.angle + Math.PI
+  const length = opposedLine.length * smoothing
+
+  return {
+    x: current.x + Math.cos(angle) * length,
+    y: current.y + Math.sin(angle) * length,
+    time: current.time || 0
+  }
+}
+
 // 继续绘制
 const continueDrawing = (point: SignaturePoint): void => {
   if (!isDrawing.value || !currentPath.value || !canInteract.value) return
@@ -304,8 +369,8 @@ const continueDrawing = (point: SignaturePoint): void => {
     currentPath.value.duration = currentTime - currentPath.value.startTime
   }
 
-  // 实时绘制 - 重新绘制整个画布以避免叠加
-  redrawCanvas()
+  // 高效的增量绘制
+  drawIncrementalPath()
 
   // 更新签名数据
   updateSignatureData()
@@ -334,6 +399,9 @@ const endDrawing = (): void => {
 
   // 保存到历史记录
   saveToHistory()
+
+  // 结束绘制后重绘画布，确保最终效果与回放一致
+  redrawCanvas()
 
   currentPath.value = null
   emit('signature-end', signatureData.value)
