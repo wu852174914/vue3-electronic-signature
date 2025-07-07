@@ -438,7 +438,8 @@ export class SignatureReplayController implements ReplayController {
  * 从签名数据生成回放数据
  */
 export function createReplayData(signatureData: SignatureData): SignatureReplay {
-  const paths = signatureData.paths.map((path, index) => {
+  // 首先处理所有路径的点数据和持续时间
+  const processedPaths = signatureData.paths.map((path) => {
     // 使用实际的时间戳信息，如果没有则基于距离和速度估算
     const points = path.points.map((point, pointIndex) => {
       let relativeTime: number
@@ -468,7 +469,20 @@ export function createReplayData(signatureData: SignatureData): SignatureReplay 
       }
     })
 
-    // 计算路径的开始时间
+    // 计算路径持续时间
+    const duration = points.length > 0 ?
+      points[points.length - 1].relativeTime! :
+      0
+
+    return {
+      ...path,
+      points,
+      duration
+    }
+  })
+
+  // 然后计算每个路径的开始和结束时间
+  const paths = processedPaths.map((path, index) => {
     let startTime: number
     if (index === 0) {
       startTime = 0
@@ -476,24 +490,17 @@ export function createReplayData(signatureData: SignatureData): SignatureReplay 
       const prevPath = paths[index - 1]
       const pauseTime = estimatePauseTime(
         signatureData.paths[index - 1].points,
-        path.points
+        signatureData.paths[index].points
       )
       startTime = prevPath.endTime! + pauseTime
     }
 
-    // 计算路径持续时间
-    const duration = points.length > 0 ?
-      points[points.length - 1].relativeTime! :
-      0
-
-    const endTime = startTime + duration
+    const endTime = startTime + path.duration!
 
     return {
       ...path,
-      points,
       startTime,
-      endTime,
-      duration
+      endTime
     }
   })
 
