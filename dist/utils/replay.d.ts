@@ -20,7 +20,13 @@ export declare class SignatureReplayController implements ReplayController {
     private lastFrameImageBitmap;
     private renderThrottle;
     private isRendering;
+    private seededRandom;
     constructor(canvas: HTMLCanvasElement);
+    /**
+     * 创建确定性随机数生成器（解决毛笔等笔迹的闪烁问题）
+     * 基于简单的线性同余生成器（LCG）算法
+     */
+    private createSeededRandom;
     /**
      * 初始化离屏画布用于性能优化
      */

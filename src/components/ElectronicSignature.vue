@@ -581,6 +581,7 @@ const getControlPointForDrawing = (current: SignaturePoint, previous: SignatureP
   }
 }
 
+
 // 使用与增量绘制一致的算法绘制完整路径
 const drawPathWithConsistentAlgorithm = (ctx: CanvasRenderingContext2D, path: SignaturePath): void => {
   if (path.points.length < 2) return

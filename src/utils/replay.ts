@@ -34,10 +34,33 @@ export class SignatureReplayController implements ReplayController {
   private renderThrottle: number = 0
   private isRendering: boolean = false
 
+  // 确定性随机数生成器（解决毛笔闪烁问题）
+  private seededRandom: (seed: number) => number
+
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
     this.ctx = canvas.getContext('2d')!
     this.initializeOffscreenCanvas()
+
+    // 初始化确定性随机数生成器（基于Context7的RandomColor库思路）
+    this.seededRandom = this.createSeededRandom()
+  }
+
+  /**
+   * 创建确定性随机数生成器（解决毛笔等笔迹的闪烁问题）
+   * 基于简单的线性同余生成器（LCG）算法
+   */
+  private createSeededRandom(): (seed: number) => number {
+    return (seed: number): number => {
+      // 使用LCG算法：(a * seed + c) % m
+      // 参数来自Numerical Recipes，保证良好的随机性
+      const a = 1664525
+      const c = 1013904223
+      const m = Math.pow(2, 32)
+
+      const result = (a * seed + c) % m
+      return result / m // 归一化到[0, 1)
+    }
   }
 
   /**
@@ -467,7 +490,9 @@ export class SignatureReplayController implements ReplayController {
           // 速度越快线条越细，速度越慢线条越粗
           const speedFactor = Math.max(0.1, Math.min(3, 100 / Math.max(speed, 1)))
           const pressure = point.pressure || 0.5
-          const randomFactor = 0.8 + Math.random() * 0.4 // 增加随机性
+          // 使用确定性随机数（基于点的坐标和时间作为种子）
+          const seed = Math.floor(point.x * 1000 + point.y * 1000 + (point.time || 0))
+          const randomFactor = 0.8 + this.seededRandom(seed) * 0.4
 
           return Math.max(1, Math.min(20, baseWidth * speedFactor * (0.3 + pressure * 1.4) * randomFactor))
         }
@@ -480,7 +505,9 @@ export class SignatureReplayController implements ReplayController {
       case 'pencil':
         // 铅笔：中等粗细，有变化
         const pressure = point.pressure || 0.5
-        const randomness = 0.9 + Math.random() * 0.2
+        // 使用确定性随机数
+        const seed = Math.floor(point.x * 1000 + point.y * 1000 + (point.time || 0))
+        const randomness = 0.9 + this.seededRandom(seed + 1) * 0.2
         return baseWidth * (0.7 + pressure * 0.6) * randomness
 
       case 'ballpoint':
@@ -541,8 +568,9 @@ export class SignatureReplayController implements ReplayController {
           this.ctx.lineTo(currentPoint.x, currentPoint.y)
           this.ctx.stroke()
 
-          // 添加墨迹扩散效果
-          if (lineWidth > 8 && Math.random() > 0.6) {
+          // 添加墨迹扩散效果（使用确定性随机数）
+          const inkSeed = Math.floor(currentPoint.x * 100 + currentPoint.y * 100 + i)
+          if (lineWidth > 8 && this.seededRandom(inkSeed) > 0.6) {
             this.ctx.globalAlpha = 0.2
             this.ctx.beginPath()
             this.ctx.arc(currentPoint.x, currentPoint.y, lineWidth * 0.3, 0, Math.PI * 2)
@@ -598,13 +626,14 @@ export class SignatureReplayController implements ReplayController {
           this.ctx.lineTo(currentPoint.x, currentPoint.y)
           this.ctx.stroke()
 
-          // 添加多层纹理效果
+          // 添加多层纹理效果（使用确定性随机数）
           for (let j = 0; j < 3; j++) {
-            if (Math.random() > 0.5) {
+            const textureSeed = Math.floor(currentPoint.x * 10 + currentPoint.y * 10 + i * 10 + j)
+            if (this.seededRandom(textureSeed) > 0.5) {
               this.ctx.globalAlpha = 0.2
               this.ctx.lineWidth = lineWidth * 0.3
-              const offsetX = (Math.random() - 0.5) * 2
-              const offsetY = (Math.random() - 0.5) * 2
+              const offsetX = (this.seededRandom(textureSeed + 1) - 0.5) * 2
+              const offsetY = (this.seededRandom(textureSeed + 2) - 0.5) * 2
               this.ctx.beginPath()
               this.ctx.moveTo(prevPoint.x + offsetX, prevPoint.y + offsetY)
               this.ctx.lineTo(currentPoint.x + offsetX, currentPoint.y + offsetY)
@@ -612,15 +641,17 @@ export class SignatureReplayController implements ReplayController {
             }
           }
 
-          // 添加石墨颗粒效果
-          if (Math.random() > 0.8) {
+          // 添加石墨颗粒效果（使用确定性随机数）
+          const particleSeed = Math.floor(currentPoint.x * 5 + currentPoint.y * 5 + i * 5)
+          if (this.seededRandom(particleSeed) > 0.8) {
             this.ctx.globalAlpha = 0.4
             for (let k = 0; k < 5; k++) {
+              const kSeed = particleSeed + k * 10
               this.ctx.beginPath()
               this.ctx.arc(
-                currentPoint.x + (Math.random() - 0.5) * 3,
-                currentPoint.y + (Math.random() - 0.5) * 3,
-                Math.random() * 0.8,
+                currentPoint.x + (this.seededRandom(kSeed + 1) - 0.5) * 3,
+                currentPoint.y + (this.seededRandom(kSeed + 2) - 0.5) * 3,
+                this.seededRandom(kSeed + 3) * 0.8,
                 0,
                 Math.PI * 2
               )
@@ -641,10 +672,11 @@ export class SignatureReplayController implements ReplayController {
           const prevPoint = points[i - 1]
           const lineWidth = this.calculateDynamicStrokeWidth(currentPoint, prevPoint, penStyle, strokeWidth)
 
-          // 模拟圆珠笔的断续效果
-          if (Math.random() > 0.1) { // 90%的概率绘制
+          // 模拟圆珠笔的断续效果（使用确定性随机数）
+          const ballpointSeed = Math.floor(currentPoint.x * 50 + currentPoint.y * 50 + i)
+          if (this.seededRandom(ballpointSeed) > 0.1) { // 90%的概率绘制
             this.ctx.lineWidth = lineWidth
-            this.ctx.globalAlpha = Math.random() > 0.2 ? 1.0 : 0.7 // 偶尔变淡
+            this.ctx.globalAlpha = this.seededRandom(ballpointSeed + 1) > 0.2 ? 1.0 : 0.7 // 偶尔变淡
             this.ctx.beginPath()
 
             if (i < points.length - 1) {
@@ -659,8 +691,9 @@ export class SignatureReplayController implements ReplayController {
             this.ctx.stroke()
           }
 
-          // 偶尔添加墨水聚集点
-          if (Math.random() > 0.95) {
+          // 偶尔添加墨水聚集点（使用确定性随机数）
+          const inkDropSeed = Math.floor(currentPoint.x * 20 + currentPoint.y * 20 + i * 3)
+          if (this.seededRandom(inkDropSeed) > 0.95) {
             this.ctx.globalAlpha = 0.8
             this.ctx.beginPath()
             this.ctx.arc(currentPoint.x, currentPoint.y, lineWidth * 0.8, 0, Math.PI * 2)

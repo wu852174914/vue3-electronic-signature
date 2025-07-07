@@ -51,6 +51,34 @@ export interface SignaturePoint {
     pressure?: number;
     /** 相对于笔画开始的时间偏移（毫秒） */
     relativeTime?: number;
+    /** 预计算的随机效果数据（确保回放一致性） */
+    randomEffects?: {
+        /** 毛笔随机因子 */
+        brushRandomFactor?: number;
+        /** 毛笔墨迹扩散 */
+        brushInkSpread?: boolean;
+        /** 铅笔随机性 */
+        pencilRandomness?: number;
+        /** 铅笔纹理效果 */
+        pencilTextures?: Array<{
+            offsetX: number;
+            offsetY: number;
+            show: boolean;
+        }>;
+        /** 铅笔颗粒效果 */
+        pencilParticles?: Array<{
+            x: number;
+            y: number;
+            radius: number;
+            show: boolean;
+        }>;
+        /** 圆珠笔断续效果 */
+        ballpointSkip?: boolean;
+        /** 圆珠笔透明度 */
+        ballpointAlpha?: number;
+        /** 圆珠笔墨水聚集 */
+        ballpointInkDrop?: boolean;
+    };
 }
 /**
  * 签名路径
