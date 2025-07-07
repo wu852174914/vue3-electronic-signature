@@ -114,7 +114,6 @@ import type {
   ReplayState
 } from '../types'
 import {
-  drawSmoothPath,
   exportSignature,
   loadImageToCanvas,
   isSignatureEmpty,
@@ -353,6 +352,69 @@ const getControlPointForDrawing = (current: SignaturePoint, previous: SignatureP
   }
 }
 
+// 使用与增量绘制一致的算法绘制完整路径
+const drawPathWithConsistentAlgorithm = (ctx: CanvasRenderingContext2D, path: SignaturePath): void => {
+  if (path.points.length < 2) return
+
+  // 设置绘制样式
+  ctx.strokeStyle = path.strokeColor
+  ctx.lineWidth = path.strokeWidth
+  ctx.lineCap = 'round'
+  ctx.lineJoin = 'round'
+
+  const points = path.points
+
+  if (points.length === 2) {
+    // 只有两个点，直接绘制直线
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    ctx.lineTo(points[1].x, points[1].y)
+    ctx.stroke()
+    return
+  }
+
+  if (!props.smoothing) {
+    // 不使用平滑，直接绘制直线
+    ctx.beginPath()
+    ctx.moveTo(points[0].x, points[0].y)
+    for (let i = 1; i < points.length; i++) {
+      ctx.lineTo(points[i].x, points[i].y)
+    }
+    ctx.stroke()
+    return
+  }
+
+  // 平滑绘制 - 与增量绘制完全一致的算法
+  ctx.beginPath()
+  ctx.moveTo(points[0].x, points[0].y)
+
+  // 绘制第一段（如果有的话）
+  if (points.length >= 3) {
+    ctx.lineTo(points[1].x, points[1].y)
+  }
+
+  // 绘制中间的平滑曲线段
+  for (let i = 1; i < points.length - 1; i++) {
+    const prevPoint = points[i - 1]
+    const currentPoint = points[i]
+    const nextPoint = points[i + 1]
+
+    const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
+    ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
+  }
+
+  // 绘制最后一段 - 使用平滑连接而不是直线
+  if (points.length >= 3) {
+    const lastPoint = points[points.length - 1]
+    const secondLastPoint = points[points.length - 2]
+
+    // 使用平滑连接到最后一点
+    ctx.quadraticCurveTo(secondLastPoint.x, secondLastPoint.y, lastPoint.x, lastPoint.y)
+  }
+
+  ctx.stroke()
+}
+
 // 继续绘制
 const continueDrawing = (point: SignaturePoint): void => {
   if (!isDrawing.value || !currentPath.value || !canInteract.value) return
@@ -487,16 +549,10 @@ const redrawCanvas = (): void => {
     ctx.fillRect(0, 0, canvasWidth.value, canvasHeight.value)
   }
 
-  // 绘制所有路径
+  // 绘制所有路径 - 使用与增量绘制相同的算法
   signatureData.value.paths.forEach((path: SignaturePath) => {
     if (path.points.length > 0) {
-      const pathDrawOptions: DrawOptions = {
-        strokeColor: path.strokeColor,
-        strokeWidth: path.strokeWidth,
-        smoothing: props.smoothing,
-        pressure: drawOptions.value.pressure
-      }
-      drawSmoothPath(ctx, path.points, pathDrawOptions)
+      drawPathWithConsistentAlgorithm(ctx, path)
     }
   })
 }
