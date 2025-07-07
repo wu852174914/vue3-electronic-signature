@@ -6,14 +6,14 @@
 
 - 🖊️ **流畅绘制** - 基于Canvas的高性能绘图引擎
 - 📱 **移动端支持** - 完美支持触摸设备和手势操作
-- 🎨 **高度可定制** - 丰富的配置选项和样式定制
+- 🎨 **多种笔迹样式** - 钢笔、毛笔、马克笔、铅笔、圆珠笔等真实笔迹效果
 - 📤 **多格式导出** - 支持PNG、JPEG、SVG、Base64等格式
 - 🔄 **撤销重做** - 完整的操作历史管理
 - 📏 **响应式设计** - 自适应容器尺寸
 - 💪 **TypeScript** - 完整的类型定义支持
 - 🎯 **压感模拟** - 根据绘制速度模拟压感效果
 - 🖼️ **图像处理** - 内置裁剪、缩放、水印等功能
-- 🎬 **签名回放** - 支持签名路径的录制和回放功能
+- 🎬 **签名回放** - 支持签名路径的录制和回放功能，保持笔迹样式一致性
 
 ## 📦 安装
 
@@ -79,6 +79,40 @@ const onSignatureEnd = (data: SignatureData) => {
 </template>
 ```
 
+### 笔迹样式选择
+
+```vue
+<template>
+  <div>
+    <!-- 样式选择器 -->
+    <select v-model="selectedPenStyle">
+      <option value="pen">钢笔 - 极细锐利，商务签名</option>
+      <option value="brush">毛笔 - 粗细变化，传统书法</option>
+      <option value="marker">马克笔 - 超粗荧光，醒目标记</option>
+      <option value="pencil">铅笔 - 粗糙纹理，素描效果</option>
+      <option value="ballpoint">圆珠笔 - 细线断续，日常书写</option>
+    </select>
+
+    <!-- 签名组件 -->
+    <ElectronicSignature
+      :width="400"
+      :height="200"
+      :pen-style="selectedPenStyle"
+      stroke-color="#2c3e50"
+      placeholder="选择不同笔迹样式体验"
+    />
+  </div>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue'
+import { ElectronicSignature } from 'vue3-electronic-signature'
+import type { PenStyle } from 'vue3-electronic-signature'
+
+const selectedPenStyle = ref<PenStyle>('pen')
+</script>
+```
+
 ### 自定义样式
 
 ```vue
@@ -119,13 +153,14 @@ const onSignatureEnd = (data: SignatureData) => {
 |--------|------|--------|------|
 | width | number \| string | '100%' | 画布宽度 |
 | height | number \| string | 300 | 画布高度 |
+| **penStyle** | **PenStyle** | **'pen'** | **笔迹样式：'pen' \| 'brush' \| 'marker' \| 'pencil' \| 'ballpoint'** |
 | strokeColor | string | '#000000' | 画笔颜色 |
-| strokeWidth | number | 2 | 画笔粗细 |
+| strokeWidth | number | 2 | 画笔粗细（部分样式会覆盖此设置） |
 | backgroundColor | string | 'transparent' | 背景颜色 |
 | disabled | boolean | false | 是否禁用 |
 | placeholder | string | '请在此处签名' | 占位符文本 |
-| smoothing | boolean | true | 是否启用平滑绘制 |
-| pressureSensitive | boolean | false | 是否启用压感效果 |
+| smoothing | boolean | true | 是否启用平滑绘制（部分样式会覆盖此设置） |
+| pressureSensitive | boolean | false | 是否启用压感效果（部分样式会覆盖此设置） |
 | minStrokeWidth | number | 1 | 最小画笔宽度（压感模式） |
 | maxStrokeWidth | number | 4 | 最大画笔宽度（压感模式） |
 | borderStyle | string | '1px solid #ddd' | 边框样式 |
@@ -181,7 +216,65 @@ const onSignatureEnd = (data: SignatureData) => {
 | getTotalDuration() | - | number | 获取总回放时长 |
 | getProgress() | - | number | 获取回放进度(0-1) |
 
+### 🎨 笔迹样式详解
+
+| 样式 | 特点 | 视觉效果 | 适用场景 |
+|------|------|----------|----------|
+| **pen** | 极细锐利线条(1px) | 商务精准，无圆角端点 | 正式签名、合同签署 |
+| **brush** | 粗细变化极大(1-20px) | 传统书法，墨迹扩散 | 艺术签名、书法练习 |
+| **marker** | 超粗荧光效果(12px) | 荧光光晕，醒目标记 | 重点标记、醒目签名 |
+| **pencil** | 粗糙纹理(2-5px) | 素描质感，石墨颗粒 | 草稿签名、自然书写 |
+| **ballpoint** | 细线断续(0.8-1.8px) | 断续效果，墨水聚集 | 日常签名、表单填写 |
+
+#### 笔迹样式配置
+
+```typescript
+import { getAllPenStyles, getPenStyleConfig } from 'vue3-electronic-signature'
+
+// 获取所有可用样式
+const allStyles = getAllPenStyles()
+
+// 获取特定样式配置
+const penConfig = getPenStyleConfig('brush')
+console.log(penConfig)
+// {
+//   name: '毛笔',
+//   description: '粗细变化极大，传统书法效果',
+//   strokeWidth: 8,
+//   smoothing: true,
+//   pressure: { enabled: true, min: 1, max: 16 },
+//   lineCap: 'round',
+//   lineJoin: 'round',
+//   recommendedColor: '#2c3e50'
+// }
+```
+
 ## 📋 类型定义
+
+### PenStyle
+
+```typescript
+type PenStyle = 'pen' | 'brush' | 'marker' | 'pencil' | 'ballpoint'
+```
+
+### PenStyleConfig
+
+```typescript
+interface PenStyleConfig {
+  name: string                    // 样式名称
+  description: string             // 样式描述
+  strokeWidth: number             // 基础线宽
+  smoothing: boolean              // 是否启用平滑
+  pressure: {                     // 压感配置
+    enabled: boolean
+    min: number
+    max: number
+  }
+  lineCap: CanvasLineCap          // 线条端点样式
+  lineJoin: CanvasLineJoin        // 线条连接样式
+  recommendedColor?: string       // 推荐颜色
+}
+```
 
 ### SignatureData
 

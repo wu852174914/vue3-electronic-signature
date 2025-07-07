@@ -91,15 +91,15 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     "onSignature-redo"?: ((data: SignatureData) => any) | undefined;
 }>, {
     backgroundColor: string;
-    strokeColor: string;
-    strokeWidth: number;
-    smoothing: boolean;
     showToolbar: boolean;
     width: number | string;
     height: number | string;
     penStyle: PenStyle;
+    strokeColor: string;
+    strokeWidth: number;
     disabled: boolean;
     placeholder: string;
+    smoothing: boolean;
     pressureSensitive: boolean;
     minStrokeWidth: number;
     maxStrokeWidth: number;
