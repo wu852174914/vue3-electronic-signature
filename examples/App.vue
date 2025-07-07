@@ -136,12 +136,27 @@
         <div class="replay-demo-container">
           <div class="recording-area">
             <h4>📝 录制签名</h4>
+
+            <!-- 笔迹样式选择器 -->
+            <div class="pen-style-selector">
+              <label>笔迹样式：</label>
+              <select v-model="selectedPenStyle" class="style-select">
+                <option
+                  v-for="style in availablePenStyles"
+                  :key="style.key"
+                  :value="style.key"
+                >
+                  {{ style.config.name }} - {{ style.config.description }}
+                </option>
+              </select>
+            </div>
+
             <ElectronicSignature
               ref="recordingSignatureRef"
               :width="400"
               :height="200"
+              :pen-style="selectedPenStyle"
               stroke-color="#E91E63"
-              :stroke-width="3"
               placeholder="请在此处签名以录制回放数据"
               show-toolbar
               @signature-start="onRecordingStart"
@@ -285,8 +300,10 @@ import type {
   SignatureReplay,
   ReplayOptions,
   ReplayState,
-  SignaturePath
+  SignaturePath,
+  PenStyle
 } from '../src'
+import { getAllPenStyles } from '../src/utils/penStyles'
 
 // 组件引用
 const basicSignatureRef = ref<SignatureMethods>()
@@ -323,6 +340,10 @@ const exportedImages = ref<Array<{
   data: string
   filename: string
 }>>([])
+
+// 笔迹样式相关状态
+const selectedPenStyle = ref<PenStyle>('pen')
+const availablePenStyles = getAllPenStyles()
 
 // 回放功能相关状态
 const replayMode = ref(false)
@@ -838,6 +859,36 @@ h1 {
   background: #2196F3 !important;
   color: white !important;
   border-color: #2196F3 !important;
+}
+
+.pen-style-selector {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px solid #e9ecef;
+}
+
+.pen-style-selector label {
+  font-weight: 600;
+  color: #495057;
+  margin-right: 10px;
+}
+
+.style-select {
+  padding: 8px 12px;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  background: white;
+  font-size: 14px;
+  color: #495057;
+  min-width: 300px;
+}
+
+.style-select:focus {
+  outline: none;
+  border-color: #80bdff;
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
 }
 
 .replay-settings {

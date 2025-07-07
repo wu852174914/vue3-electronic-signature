@@ -6,6 +6,7 @@ interface ElectronicSignatureProps extends SignatureProps {
 declare const _default: import('vue').DefineComponent<import('vue').ExtractPropTypes<__VLS_WithDefaults<__VLS_TypePropsToRuntimeProps<ElectronicSignatureProps>, {
     width: string;
     height: number;
+    penStyle: string;
     strokeColor: string;
     strokeWidth: number;
     backgroundColor: string;
@@ -59,6 +60,7 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
 }, string, import('vue').PublicProps, Readonly<import('vue').ExtractPropTypes<__VLS_WithDefaults<__VLS_TypePropsToRuntimeProps<ElectronicSignatureProps>, {
     width: string;
     height: number;
+    penStyle: string;
     strokeColor: string;
     strokeWidth: number;
     backgroundColor: string;
@@ -95,6 +97,7 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     showToolbar: boolean;
     width: number | string;
     height: number | string;
+    penStyle: import('..').PenStyle;
     disabled: boolean;
     placeholder: string;
     pressureSensitive: boolean;

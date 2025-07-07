@@ -6,6 +6,8 @@ export interface SignatureProps {
   width?: number | string
   /** 画布高度，支持数字或字符串（如 '300px'） */
   height?: number | string
+  /** 笔迹样式 */
+  penStyle?: PenStyle
   /** 画笔颜色 */
   strokeColor?: string
   /** 画笔粗细 */
@@ -163,6 +165,37 @@ export interface SignatureMethods extends ReplayController {
 export type TouchEventType = 'start' | 'move' | 'end'
 
 /**
+ * 笔迹样式类型
+ */
+export type PenStyle = 'pen' | 'brush' | 'marker' | 'pencil' | 'ballpoint'
+
+/**
+ * 笔迹样式配置
+ */
+export interface PenStyleConfig {
+  /** 样式名称 */
+  name: string
+  /** 样式描述 */
+  description: string
+  /** 基础线宽 */
+  strokeWidth: number
+  /** 是否启用平滑 */
+  smoothing: boolean
+  /** 压感配置 */
+  pressure: {
+    enabled: boolean
+    min: number
+    max: number
+  }
+  /** 线条端点样式 */
+  lineCap: CanvasLineCap
+  /** 线条连接样式 */
+  lineJoin: CanvasLineJoin
+  /** 推荐颜色 */
+  recommendedColor?: string
+}
+
+/**
  * 绘制选项
  */
 export interface DrawOptions {
@@ -178,6 +211,10 @@ export interface DrawOptions {
     min: number
     max: number
   }
+  /** 线条端点样式 */
+  lineCap?: CanvasLineCap
+  /** 线条连接样式 */
+  lineJoin?: CanvasLineJoin
 }
 
 /**

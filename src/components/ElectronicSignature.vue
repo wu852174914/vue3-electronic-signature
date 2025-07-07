@@ -124,6 +124,9 @@ import {
   SignatureReplayController,
   createReplayData
 } from '../utils/replay'
+import {
+  createDrawOptionsFromPenStyle
+} from '../utils/penStyles'
 
 // 组件属性
 interface ElectronicSignatureProps extends SignatureProps {
@@ -133,6 +136,7 @@ interface ElectronicSignatureProps extends SignatureProps {
 const props = withDefaults(defineProps<ElectronicSignatureProps>(), {
   width: '100%',
   height: 300,
+  penStyle: 'pen',
   strokeColor: '#000000',
   strokeWidth: 2,
   backgroundColor: 'transparent',
@@ -235,16 +239,38 @@ const isReplayActive = computed(() => isReplayMode.value && replayController.val
 const canInteract = computed(() => !isReplayActive.value && !props.disabled)
 const showReplayControls = computed(() => isReplayActive.value && props.replayOptions?.showControls !== false)
 
-const drawOptions = computed((): DrawOptions => ({
-  strokeColor: props.strokeColor,
-  strokeWidth: props.strokeWidth,
-  smoothing: props.smoothing,
-  pressure: {
-    enabled: props.pressureSensitive,
-    min: props.minStrokeWidth,
-    max: props.maxStrokeWidth
+const drawOptions = computed((): DrawOptions => {
+  // 如果指定了笔迹样式，使用样式配置
+  if (props.penStyle) {
+    const styleOptions = createDrawOptionsFromPenStyle(props.penStyle, props.strokeColor)
+    return {
+      strokeColor: styleOptions.strokeColor,
+      strokeWidth: props.strokeWidth || styleOptions.strokeWidth,
+      smoothing: props.smoothing !== undefined ? props.smoothing : styleOptions.smoothing,
+      pressure: {
+        enabled: props.pressureSensitive !== undefined ? props.pressureSensitive : styleOptions.pressure.enabled,
+        min: props.minStrokeWidth || styleOptions.pressure.min,
+        max: props.maxStrokeWidth || styleOptions.pressure.max
+      },
+      lineCap: styleOptions.lineCap,
+      lineJoin: styleOptions.lineJoin
+    }
   }
-}))
+
+  // 使用传统的props配置
+  return {
+    strokeColor: props.strokeColor || '#000000',
+    strokeWidth: props.strokeWidth || 2,
+    smoothing: props.smoothing !== undefined ? props.smoothing : true,
+    pressure: {
+      enabled: props.pressureSensitive || false,
+      min: props.minStrokeWidth || 1,
+      max: props.maxStrokeWidth || 4
+    },
+    lineCap: 'round',
+    lineJoin: 'round'
+  }
+})
 
 // 获取画布上下文
 const getContext = (): CanvasRenderingContext2D | null => {
@@ -300,8 +326,8 @@ const drawIncrementalPath = (): void => {
   // 设置绘制样式
   ctx.strokeStyle = currentPath.value.strokeColor
   ctx.lineWidth = currentPath.value.strokeWidth
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
+  ctx.lineCap = drawOptions.value.lineCap || 'round'
+  ctx.lineJoin = drawOptions.value.lineJoin || 'round'
 
   if (pointCount === 2) {
     // 第一条线段，直接绘制
@@ -359,8 +385,8 @@ const drawPathWithConsistentAlgorithm = (ctx: CanvasRenderingContext2D, path: Si
   // 设置绘制样式
   ctx.strokeStyle = path.strokeColor
   ctx.lineWidth = path.strokeWidth
-  ctx.lineCap = 'round'
-  ctx.lineJoin = 'round'
+  ctx.lineCap = drawOptions.value.lineCap || 'round'
+  ctx.lineJoin = drawOptions.value.lineJoin || 'round'
 
   const points = path.points
 

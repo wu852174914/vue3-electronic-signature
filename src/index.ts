@@ -16,11 +16,11 @@ export type {
   SignatureMethods,
   TouchEventType,
   DrawOptions,
+  PenStyle,
+  PenStyleConfig,
   SignatureReplay,
   ReplayOptions,
-  ReplayState,
-  ReplayEvents,
-  ReplayController
+  ReplayState
 } from './types'
 
 // 导出工具函数
@@ -49,7 +49,15 @@ export {
   convertToGrayscale
 } from './utils/canvas'
 
-// 导出回放工具函数
+// 导出笔迹样式工具函数
+export {
+  getPenStyleConfig,
+  getAllPenStyles,
+  createDrawOptionsFromPenStyle,
+  PEN_STYLE_CONFIGS
+} from './utils/penStyles'
+
+// 导出回放相关工具函数
 export {
   SignatureReplayController,
   createReplayData
