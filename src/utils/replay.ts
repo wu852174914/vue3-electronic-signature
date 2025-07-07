@@ -60,6 +60,16 @@ export class SignatureReplayController implements ReplayController {
       return
     }
 
+    if (this.replayData.totalDuration <= 0) {
+      console.error('回放数据总时长为0，无法播放')
+      return
+    }
+
+    if (this.replayData.paths.length === 0) {
+      console.error('回放数据没有路径，无法播放')
+      return
+    }
+
     if (this.state === 'playing') {
       console.log('已在播放中，忽略')
       return
@@ -482,8 +492,12 @@ export function createReplayData(signatureData: SignatureData): SignatureReplay 
   })
 
   // 然后计算每个路径的开始和结束时间
-  const paths = processedPaths.map((path, index) => {
+  const paths: SignaturePath[] = []
+
+  for (let index = 0; index < processedPaths.length; index++) {
+    const path = processedPaths[index]
     let startTime: number
+
     if (index === 0) {
       startTime = 0
     } else {
@@ -497,16 +511,30 @@ export function createReplayData(signatureData: SignatureData): SignatureReplay 
 
     const endTime = startTime + path.duration!
 
-    return {
+    const finalPath = {
       ...path,
       startTime,
       endTime
     }
-  })
+
+    console.log(`路径 ${index}: 开始时间=${startTime}, 结束时间=${endTime}, 持续时间=${path.duration}`)
+
+    paths.push(finalPath)
+  }
 
   const totalDuration = paths.length > 0 ?
     paths[paths.length - 1].endTime! :
     0
+
+  console.log('回放数据生成完成:')
+  console.log('- 路径数量:', paths.length)
+  console.log('- 总时长:', totalDuration)
+  console.log('- 路径详情:', paths.map(p => ({
+    startTime: p.startTime,
+    endTime: p.endTime,
+    duration: p.duration,
+    pointCount: p.points.length
+  })))
 
   // 计算元数据
   const totalDistance = paths.reduce((sum, path) => {
