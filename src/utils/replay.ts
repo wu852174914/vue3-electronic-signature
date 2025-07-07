@@ -681,7 +681,7 @@ export class SignatureReplayController implements ReplayController {
         break
 
       case 'ballpoint':
-        // 圆珠笔：细线条，断续效果
+        // 圆珠笔：细线条，断续效果，圆形收笔避免直棱
         this.ctx.lineCap = 'round'
         this.ctx.lineJoin = 'round'
 

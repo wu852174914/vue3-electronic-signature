@@ -137,7 +137,7 @@ interface ElectronicSignatureProps extends SignatureProps {
 const props = withDefaults(defineProps<ElectronicSignatureProps>(), {
   width: '100%',
   height: 300,
-  penStyle: 'pen',
+  penStyle: 'ballpoint', // 全局默认使用适中笔迹
   strokeColor: '#000000',
   strokeWidth: 2,
   backgroundColor: 'transparent',

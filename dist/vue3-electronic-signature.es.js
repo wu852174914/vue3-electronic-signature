@@ -844,7 +844,7 @@ const St = ["width", "height"], Pt = {
     showToolbar: { type: Boolean, default: !1 },
     width: { default: "100%" },
     height: { default: 300 },
-    penStyle: { default: "pen" },
+    penStyle: { default: "ballpoint" },
     strokeColor: { default: "#000000" },
     strokeWidth: { default: 2 },
     backgroundColor: { default: "transparent" },
@@ -1464,7 +1464,7 @@ const Yt = (l, t) => {
   for (const [a, s] of t)
     n[a] = s;
   return n;
-}, Ae = /* @__PURE__ */ Yt(Vt, [["__scopeId", "data-v-18bf5717"]]);
+}, Ae = /* @__PURE__ */ Yt(Vt, [["__scopeId", "data-v-8a5f5b1d"]]);
 function Xt() {
   return window.devicePixelRatio || 1;
 }

@@ -6,7 +6,7 @@ export interface SignatureProps {
     width?: number | string;
     /** 画布高度，支持数字或字符串（如 '300px'） */
     height?: number | string;
-    /** 笔迹样式 */
+    /** 笔迹样式 - 默认为适中笔迹 */
     penStyle?: PenStyle;
     /** 画笔颜色 */
     strokeColor?: string;
