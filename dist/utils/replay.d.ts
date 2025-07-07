@@ -15,11 +15,24 @@ export declare class SignatureReplayController implements ReplayController {
     private pausedTime;
     private options;
     private eventCallbacks;
+    private lastRenderedTime;
+    private completedPaths;
+    private offscreenCanvas;
+    private offscreenCtx;
+    private needsFullRedraw;
     constructor(canvas: HTMLCanvasElement);
+    /**
+     * 初始化离屏画布用于性能优化
+     */
+    private initializeOffscreenCanvas;
     /**
      * 设置回放数据
      */
     setReplayData(data: SignatureReplay, options?: ReplayOptions): void;
+    /**
+     * 重置优化状态
+     */
+    private resetOptimizationState;
     /**
      * 开始播放
      */
@@ -61,9 +74,33 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private animate;
     /**
-     * 渲染指定时间的帧
+     * 渲染指定时间的帧 - 优化版本，减少重绘
      */
     private renderFrame;
+    /**
+     * 完全重绘帧（用于初始化或时间倒退）
+     */
+    private renderFullFrame;
+    /**
+     * 增量渲染帧（只更新变化的部分）
+     */
+    private renderIncrementalFrame;
+    /**
+     * 优化的活动路径渲染
+     */
+    private renderActivePathOptimized;
+    /**
+     * 获取路径的边界框
+     */
+    private getPathBounds;
+    /**
+     * 在指定边界内重绘已完成的路径
+     */
+    private redrawCompletedPathsInBounds;
+    /**
+     * 检查路径是否与边界相交
+     */
+    private pathIntersectsBounds;
     /**
      * 绘制完整路径 - 使用与录制时相同的笔迹样式算法
      */
