@@ -737,8 +737,8 @@ export class SignatureReplayController implements ReplayController {
     // 使用Fabric.js的平滑路径技术绘制连续渐变
     this.drawVelocityBasedPath(processedPoints)
 
-    // 添加连笔的优美效果 - 基于速度变化的智能连接
-    this.addVelocityBasedConnections(processedPoints)
+    // 删除连接点 - 基于用户反馈，不需要黑色圆圈连接点
+    // 优雅笔迹的美感主要通过渐变路径体现
   }
 
   /**
@@ -771,26 +771,26 @@ export class SignatureReplayController implements ReplayController {
         const timeDiff = Math.max(1, (point.time || 0) - (prevPoint.time || 0))
         velocity = distance / timeDiff
 
-        // 基于Fabric.js的动态线宽算法
+        // 基于Fabric.js的动态线宽算法 - 增强渐变效果
         const pressure = point.pressure || 0.5
-        const velocityFactor = Math.max(0.2, Math.min(3.0, 100 / Math.max(velocity, 1)))
+        const velocityFactor = Math.max(0.1, Math.min(5.0, 150 / Math.max(velocity, 1))) // 增强速度影响
 
-        // 优雅笔的核心算法：速度越快线条越细，压力越大线条越粗
-        dynamicWidth = baseWidth * (0.3 + pressure * velocityFactor * 1.4)
+        // 优雅笔的核心算法：速度越快线条越细，压力越大线条越粗 - 增强对比度
+        dynamicWidth = baseWidth * (0.2 + pressure * velocityFactor * 2.0) // 增强变化范围
       }
 
-      // 平滑线宽变化 - 避免突变
+      // 平滑线宽变化 - 避免突变，但保持明显的渐变效果
       let smoothedWidth = dynamicWidth
       if (i > 0) {
         const prevWidth = processedPoints[i - 1].smoothedWidth
-        smoothedWidth = prevWidth + (dynamicWidth - prevWidth) * 0.3 // 平滑因子
+        smoothedWidth = prevWidth + (dynamicWidth - prevWidth) * 0.5 // 增强平滑因子，保持渐变明显
       }
 
       processedPoints.push({
         ...point,
         velocity,
         dynamicWidth,
-        smoothedWidth: Math.max(0.5, Math.min(baseWidth * 3, smoothedWidth))
+        smoothedWidth: Math.max(0.3, Math.min(baseWidth * 5, smoothedWidth)) // 扩大变化范围
       })
     }
 
@@ -882,67 +882,7 @@ export class SignatureReplayController implements ReplayController {
     this.ctx.fill()
   }
 
-  /**
-   * 基于速度变化的智能连接 - 优化连笔效果，增强连笔的明显性
-   */
-  private addVelocityBasedConnections(
-    processedPoints: Array<SignaturePoint & { velocity: number, dynamicWidth: number, smoothedWidth: number }>
-  ): void {
-    // 基于Fabric.js的智能连接算法，增强连笔效果
-    for (let i = 1; i < processedPoints.length - 1; i++) {
-      const prevPoint = processedPoints[i - 1]
-      const currentPoint = processedPoints[i]
-      const nextPoint = processedPoints[i + 1]
-
-      // 计算速度变化率
-      const velocityChange = Math.abs(currentPoint.velocity - prevPoint.velocity)
-      const avgVelocity = (currentPoint.velocity + prevPoint.velocity) / 2
-
-      // 计算角度变化
-      const angle1 = Math.atan2(currentPoint.y - prevPoint.y, currentPoint.x - prevPoint.x)
-      const angle2 = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x)
-      let angleDiff = Math.abs(angle2 - angle1)
-
-      // 处理角度跨越π的情况
-      if (angleDiff > Math.PI) {
-        angleDiff = 2 * Math.PI - angleDiff
-      }
-
-      // 更明显的连笔效果：降低阈值，增加连接点
-      const shouldConnect = velocityChange > avgVelocity * 0.3 || angleDiff > 0.15 // 降低阈值
-
-      if (shouldConnect) {
-        // 增强连接效果：使用渐变连接
-        const connectionRadius = currentPoint.smoothedWidth * 0.6 // 增大连接半径
-
-        // 创建径向渐变效果
-        const gradient = this.ctx.createRadialGradient(
-          currentPoint.x, currentPoint.y, 0,
-          currentPoint.x, currentPoint.y, connectionRadius
-        )
-        gradient.addColorStop(0, this.ctx.fillStyle as string)
-        gradient.addColorStop(1, 'transparent')
-
-        const originalFillStyle = this.ctx.fillStyle
-        this.ctx.fillStyle = gradient
-
-        this.ctx.beginPath()
-        this.ctx.arc(currentPoint.x, currentPoint.y, connectionRadius, 0, Math.PI * 2)
-        this.ctx.fill()
-
-        this.ctx.fillStyle = originalFillStyle
-      }
-
-      // 额外的连笔增强：在所有转折点添加小的连接点
-      if (angleDiff > 0.05) { // 很小的角度变化也添加连接
-        const smallConnectionRadius = currentPoint.smoothedWidth * 0.2
-
-        this.ctx.beginPath()
-        this.ctx.arc(currentPoint.x, currentPoint.y, smallConnectionRadius, 0, Math.PI * 2)
-        this.ctx.fill()
-      }
-    }
-  }
+  // 删除连接点函数 - 基于用户反馈，不需要黑色圆圈连接点
 
   /**
    * 平滑插值函数 - 基于Paper.js的平滑算法
