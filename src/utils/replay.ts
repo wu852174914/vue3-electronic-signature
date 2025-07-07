@@ -709,14 +709,8 @@ export class SignatureReplayController implements ReplayController {
             this.ctx.stroke()
           }
 
-          // 偶尔添加墨水聚集点（使用确定性随机数）
-          const inkDropSeed = Math.floor(currentPoint.x * 20 + currentPoint.y * 20 + i * 3)
-          if (this.seededRandom(inkDropSeed) > 0.95) {
-            this.ctx.globalAlpha = 0.8
-            this.ctx.beginPath()
-            this.ctx.arc(currentPoint.x, currentPoint.y, lineWidth * 0.8, 0, Math.PI * 2)
-            this.ctx.fill()
-          }
+          // 移除墨水聚集点 - 基于用户反馈，适中笔迹不需要黑色圆圈
+          // 保持线条的简洁和清晰
         }
         this.ctx.globalAlpha = 1.0
         break

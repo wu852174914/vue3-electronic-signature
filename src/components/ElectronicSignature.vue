@@ -552,13 +552,8 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
           ctx.stroke()
         }
 
-        // 偶尔添加墨水聚集点
-        if (Math.random() > 0.95) {
-          ctx.globalAlpha = 0.8
-          ctx.beginPath()
-          ctx.arc(currentPoint.x, currentPoint.y, lineWidth * 0.8, 0, Math.PI * 2)
-          ctx.fill()
-        }
+        // 移除墨水聚集点 - 基于用户反馈，适中笔迹不需要黑色圆圈
+        // 保持线条的简洁和清晰
       }
       ctx.globalAlpha = 1.0
       break
@@ -570,14 +565,23 @@ const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[
   }
 }
 
-// 实时一致性绘制 - 基于Context7技术，确保书写时与最终效果一致
+// 智能实时绘制 - 基于Context7技术，避免毛笔闪烁问题
 const drawRealTimeConsistentPath = (): void => {
   if (!currentPath.value || currentPath.value.points.length < 2) return
 
   const ctx = getContext()
   if (!ctx) return
 
-  // 清除画布并重绘所有路径，确保完全一致
+  const penStyle = currentPath.value.penStyle || props.penStyle || 'pen'
+
+  // 毛笔样式特殊处理：避免闪烁，只绘制新增部分
+  if (penStyle === 'brush') {
+    drawStableBrushIncrement()
+    return
+  }
+
+  // 其他笔迹样式：使用完全重绘确保一致性
+  // 清除画布并重绘所有路径
   ctx.clearRect(0, 0, canvasWidth.value, canvasHeight.value)
 
   // 重绘所有已完成的路径
@@ -590,6 +594,25 @@ const drawRealTimeConsistentPath = (): void => {
   // 绘制当前正在绘制的路径（使用完整算法）
   if (currentPath.value.points.length >= 2) {
     drawPathWithConsistentAlgorithm(ctx, currentPath.value)
+  }
+}
+
+// 稳定的毛笔增量绘制 - 避免闪烁，已书写笔迹不变
+const drawStableBrushIncrement = (): void => {
+  if (!currentPath.value || currentPath.value.points.length < 2) return
+
+  const ctx = getContext()
+  if (!ctx) return
+
+  const points = currentPath.value.points
+  const pointCount = points.length
+
+  // 只绘制最新的线段，避免重绘已有笔迹
+  if (pointCount >= 2) {
+    const recentPoints = points.slice(-3) // 取最近3个点确保连续性
+    if (recentPoints.length >= 2) {
+      drawStyledStroke(ctx, recentPoints, 'brush')
+    }
   }
 }
 
@@ -631,7 +654,7 @@ const drawElegantStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint
   // 使用Fabric.js的平滑路径技术绘制连续渐变
   drawVelocityBasedPath(ctx, processedPoints)
 
-  // 添加连笔的优美效果 - 基于速度变化的智能连接
+  // 添加连笔的优美效果 - 只对优雅笔迹添加连接效果
   addVelocityBasedConnections(ctx, processedPoints)
 }
 
