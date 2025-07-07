@@ -277,7 +277,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, nextTick } from 'vue'
 import { ElectronicSignature } from '../src'
 import type {
   SignatureData,
@@ -457,29 +457,57 @@ const clearRecording = () => {
 }
 
 const generateReplayData = () => {
-  if (!recordingSignatureRef.value) return
+  console.log('开始生成回放数据...')
+
+  if (!recordingSignatureRef.value) {
+    console.error('录制组件引用为空')
+    return
+  }
 
   const signatureData = recordingSignatureRef.value.getSignatureData()
+  console.log('获取到签名数据:', signatureData)
+
   if (!signatureData.isEmpty) {
+    console.log('签名数据不为空，开始生成回放数据')
     replayData.value = recordingSignatureRef.value.getReplayData()
-    console.log('生成回放数据', replayData.value)
+    console.log('生成回放数据完成:', replayData.value)
+    console.log('回放数据是否为null:', replayData.value === null)
+  } else {
+    console.warn('签名数据为空，无法生成回放数据')
   }
 }
 
 // 回放控制函数
 const startReplay = () => {
-  if (!playbackSignatureRef.value || !replayData.value) return
+  console.log('startReplay被调用')
+  console.log('playbackSignatureRef.value:', !!playbackSignatureRef.value)
+  console.log('replayData.value:', replayData.value)
+  console.log('当前回放模式:', replayMode.value)
+
+  if (!playbackSignatureRef.value) {
+    console.error('回放组件引用为空')
+    return
+  }
+
+  if (!replayData.value) {
+    console.error('回放数据为空')
+    return
+  }
 
   console.log('开始回放，数据:', replayData.value)
   console.log('回放选项:', replayOptions)
 
   // 确保回放模式已启用
   if (!replayMode.value) {
+    console.log('启用回放模式')
     replayMode.value = true
   }
 
-  // 直接调用播放方法，因为组件已经通过props设置了回放数据
-  playbackSignatureRef.value.play()
+  // 等待一下确保数据已经传递
+  nextTick(() => {
+    console.log('nextTick后调用播放')
+    playbackSignatureRef.value?.play()
+  })
 }
 
 const pauseReplay = () => {

@@ -682,12 +682,21 @@ watch(() => props.replayMode, (newMode: boolean | undefined) => {
 
 // 监听回放数据变化
 watch(() => props.replayData, (newData: SignatureReplay | undefined) => {
+  console.log('watch监听到回放数据变化:', newData)
+  console.log('当前回放模式:', props.replayMode)
+  console.log('回放控制器是否存在:', !!replayController.value)
+
   if (newData && props.replayMode && replayController.value) {
     // 只设置数据，不自动播放
+    console.log('开始设置回放数据到控制器')
     replayController.value.setReplayData(newData, props.replayOptions || {})
     console.log('回放数据已更新:', newData)
+  } else {
+    if (!newData) console.log('回放数据为空，跳过设置')
+    if (!props.replayMode) console.log('不在回放模式，跳过设置')
+    if (!replayController.value) console.log('回放控制器不存在，跳过设置')
   }
-})
+}, { immediate: true })
 
 // 生命周期
 onMounted(() => {
