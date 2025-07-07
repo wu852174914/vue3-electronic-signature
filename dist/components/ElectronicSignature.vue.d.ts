@@ -1,4 +1,4 @@
-import { SignatureProps, SignaturePath, SignatureData, ExportOptions, SignatureReplay, ReplayOptions, ReplayState } from '../types';
+import { SignatureProps, SignaturePath, SignatureData, ExportOptions, SignatureReplay, ReplayOptions, ReplayState, PenStyle } from '../types';
 
 interface ElectronicSignatureProps extends SignatureProps {
     showToolbar?: boolean;
@@ -97,7 +97,7 @@ declare const _default: import('vue').DefineComponent<import('vue').ExtractPropT
     showToolbar: boolean;
     width: number | string;
     height: number | string;
-    penStyle: import('..').PenStyle;
+    penStyle: PenStyle;
     disabled: boolean;
     placeholder: string;
     pressureSensitive: boolean;

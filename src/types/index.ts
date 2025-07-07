@@ -263,6 +263,8 @@ export interface ReplayOptions {
   endTime?: number
   /** 绘制选项（确保回放与录制一致） */
   drawOptions?: DrawOptions
+  /** 笔迹样式（确保回放与录制一致） */
+  penStyle?: PenStyle
 }
 
 /**

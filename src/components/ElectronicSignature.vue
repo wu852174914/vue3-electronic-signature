@@ -111,7 +111,8 @@ import type {
   SignatureMethods,
   SignatureReplay,
   ReplayOptions,
-  ReplayState
+  ReplayState,
+  PenStyle
 } from '../types'
 import {
   exportSignature,
@@ -313,6 +314,141 @@ const startDrawing = (point: SignaturePoint): void => {
   emit('signature-start')
 }
 
+// 根据笔迹样式计算动态线宽
+const calculateDynamicStrokeWidth = (point: SignaturePoint, prevPoint: SignaturePoint, penStyle: PenStyle, baseWidth: number): number => {
+  if (!drawOptions.value.pressure.enabled) return baseWidth
+
+  switch (penStyle) {
+    case 'brush':
+      // 毛笔：根据速度和压力大幅变化
+      if (prevPoint) {
+        const distance = Math.sqrt(Math.pow(point.x - prevPoint.x, 2) + Math.pow(point.y - prevPoint.y, 2))
+        const speed = distance / Math.max(1, (point.time || 0) - (prevPoint.time || 0))
+        const speedFactor = Math.max(0.3, Math.min(2, 50 / Math.max(speed, 1)))
+        const pressure = point.pressure || 0.5
+        return baseWidth * speedFactor * (0.5 + pressure)
+      }
+      return baseWidth
+
+    case 'pencil':
+      // 铅笔：轻微的压感变化
+      const pressure = point.pressure || 0.5
+      return baseWidth * (0.8 + pressure * 0.4)
+
+    case 'ballpoint':
+      // 圆珠笔：非常轻微的变化
+      const ballpointPressure = point.pressure || 0.5
+      return baseWidth * (0.9 + ballpointPressure * 0.2)
+
+    default:
+      return baseWidth
+  }
+}
+
+// 根据笔迹样式绘制线段
+const drawStyledStroke = (ctx: CanvasRenderingContext2D, points: SignaturePoint[], penStyle: PenStyle): void => {
+  if (points.length < 2) return
+
+  ctx.strokeStyle = currentPath.value?.strokeColor || drawOptions.value.strokeColor
+  ctx.lineCap = drawOptions.value.lineCap || 'round'
+  ctx.lineJoin = drawOptions.value.lineJoin || 'round'
+
+  switch (penStyle) {
+    case 'pen':
+      // 钢笔：细线条，高精度
+      ctx.lineWidth = drawOptions.value.strokeWidth
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      if (drawOptions.value.smoothing && points.length >= 3) {
+        for (let i = 1; i < points.length - 1; i++) {
+          const controlPoint = getControlPointForDrawing(points[i], points[i - 1], points[i + 1])
+          ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, points[i].x, points[i].y)
+        }
+        ctx.lineTo(points[points.length - 1].x, points[points.length - 1].y)
+      } else {
+        for (let i = 1; i < points.length; i++) {
+          ctx.lineTo(points[i].x, points[i].y)
+        }
+      }
+      ctx.stroke()
+      break
+
+    case 'brush':
+      // 毛笔：动态线宽，压感效果
+      for (let i = 1; i < points.length; i++) {
+        const currentPoint = points[i]
+        const prevPoint = points[i - 1]
+        const lineWidth = calculateDynamicStrokeWidth(currentPoint, prevPoint, penStyle, drawOptions.value.strokeWidth)
+
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.moveTo(prevPoint.x, prevPoint.y)
+        ctx.lineTo(currentPoint.x, currentPoint.y)
+        ctx.stroke()
+      }
+      break
+
+    case 'marker':
+      // 马克笔：粗线条，轻微透明度
+      ctx.globalAlpha = 0.8
+      ctx.lineWidth = drawOptions.value.strokeWidth
+      ctx.beginPath()
+      ctx.moveTo(points[0].x, points[0].y)
+      for (let i = 1; i < points.length; i++) {
+        ctx.lineTo(points[i].x, points[i].y)
+      }
+      ctx.stroke()
+      ctx.globalAlpha = 1.0
+      break
+
+    case 'pencil':
+      // 铅笔：不平滑，有纹理感
+      for (let i = 1; i < points.length; i++) {
+        const currentPoint = points[i]
+        const prevPoint = points[i - 1]
+        const lineWidth = calculateDynamicStrokeWidth(currentPoint, prevPoint, penStyle, drawOptions.value.strokeWidth)
+
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.moveTo(prevPoint.x, prevPoint.y)
+        ctx.lineTo(currentPoint.x, currentPoint.y)
+        ctx.stroke()
+
+        // 添加轻微的纹理效果
+        if (Math.random() > 0.7) {
+          ctx.globalAlpha = 0.3
+          ctx.beginPath()
+          ctx.arc(currentPoint.x + (Math.random() - 0.5), currentPoint.y + (Math.random() - 0.5), 0.5, 0, Math.PI * 2)
+          ctx.fill()
+          ctx.globalAlpha = 1.0
+        }
+      }
+      break
+
+    case 'ballpoint':
+      // 圆珠笔：细线条，轻微变化
+      for (let i = 1; i < points.length; i++) {
+        const currentPoint = points[i]
+        const prevPoint = points[i - 1]
+        const lineWidth = calculateDynamicStrokeWidth(currentPoint, prevPoint, penStyle, drawOptions.value.strokeWidth)
+
+        ctx.lineWidth = lineWidth
+        ctx.beginPath()
+        ctx.moveTo(prevPoint.x, prevPoint.y)
+
+        if (drawOptions.value.smoothing && i < points.length - 1) {
+          const nextPoint = points[i + 1]
+          const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
+          ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
+        } else {
+          ctx.lineTo(currentPoint.x, currentPoint.y)
+        }
+        ctx.stroke()
+      }
+      break
+  }
+}
+
 // 高效的增量绘制 - 只绘制新增的线段
 const drawIncrementalPath = (): void => {
   if (!currentPath.value || currentPath.value.points.length < 2) return
@@ -322,41 +458,15 @@ const drawIncrementalPath = (): void => {
 
   const points = currentPath.value.points
   const pointCount = points.length
-
-  // 设置绘制样式
-  ctx.strokeStyle = currentPath.value.strokeColor
-  ctx.lineWidth = currentPath.value.strokeWidth
-  ctx.lineCap = drawOptions.value.lineCap || 'round'
-  ctx.lineJoin = drawOptions.value.lineJoin || 'round'
+  const penStyle = props.penStyle || 'pen'
 
   if (pointCount === 2) {
-    // 第一条线段，直接绘制
-    ctx.beginPath()
-    ctx.moveTo(points[0].x, points[0].y)
-    ctx.lineTo(points[1].x, points[1].y)
-    ctx.stroke()
+    // 第一条线段
+    drawStyledStroke(ctx, points, penStyle)
   } else if (pointCount >= 3) {
-    // 使用平滑曲线绘制新增部分
-    const prevPoint = points[pointCount - 3]
-    const currentPoint = points[pointCount - 2]
-    const nextPoint = points[pointCount - 1]
-
-    ctx.beginPath()
-
-    if (props.smoothing) {
-      // 平滑绘制 - 使用与回放相同的算法
-      ctx.moveTo(prevPoint.x, prevPoint.y)
-
-      // 计算控制点
-      const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
-      ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
-    } else {
-      // 直线绘制
-      ctx.moveTo(currentPoint.x, currentPoint.y)
-      ctx.lineTo(nextPoint.x, nextPoint.y)
-    }
-
-    ctx.stroke()
+    // 只绘制最新的线段
+    const recentPoints = points.slice(-3)
+    drawStyledStroke(ctx, recentPoints, penStyle)
   }
 }
 
@@ -382,63 +492,17 @@ const getControlPointForDrawing = (current: SignaturePoint, previous: SignatureP
 const drawPathWithConsistentAlgorithm = (ctx: CanvasRenderingContext2D, path: SignaturePath): void => {
   if (path.points.length < 2) return
 
-  // 设置绘制样式
-  ctx.strokeStyle = path.strokeColor
-  ctx.lineWidth = path.strokeWidth
-  ctx.lineCap = drawOptions.value.lineCap || 'round'
-  ctx.lineJoin = drawOptions.value.lineJoin || 'round'
+  const penStyle = props.penStyle || 'pen'
 
-  const points = path.points
+  // 临时设置当前路径以便drawStyledStroke可以访问颜色
+  const originalPath = currentPath.value
+  currentPath.value = path
 
-  if (points.length === 2) {
-    // 只有两个点，直接绘制直线
-    ctx.beginPath()
-    ctx.moveTo(points[0].x, points[0].y)
-    ctx.lineTo(points[1].x, points[1].y)
-    ctx.stroke()
-    return
-  }
+  // 使用相同的样式绘制算法
+  drawStyledStroke(ctx, path.points, penStyle)
 
-  if (!props.smoothing) {
-    // 不使用平滑，直接绘制直线
-    ctx.beginPath()
-    ctx.moveTo(points[0].x, points[0].y)
-    for (let i = 1; i < points.length; i++) {
-      ctx.lineTo(points[i].x, points[i].y)
-    }
-    ctx.stroke()
-    return
-  }
-
-  // 平滑绘制 - 与增量绘制完全一致的算法
-  ctx.beginPath()
-  ctx.moveTo(points[0].x, points[0].y)
-
-  // 绘制第一段（如果有的话）
-  if (points.length >= 3) {
-    ctx.lineTo(points[1].x, points[1].y)
-  }
-
-  // 绘制中间的平滑曲线段
-  for (let i = 1; i < points.length - 1; i++) {
-    const prevPoint = points[i - 1]
-    const currentPoint = points[i]
-    const nextPoint = points[i + 1]
-
-    const controlPoint = getControlPointForDrawing(currentPoint, prevPoint, nextPoint)
-    ctx.quadraticCurveTo(controlPoint.x, controlPoint.y, currentPoint.x, currentPoint.y)
-  }
-
-  // 绘制最后一段 - 使用平滑连接而不是直线
-  if (points.length >= 3) {
-    const lastPoint = points[points.length - 1]
-    const secondLastPoint = points[points.length - 2]
-
-    // 使用平滑连接到最后一点
-    ctx.quadraticCurveTo(secondLastPoint.x, secondLastPoint.y, lastPoint.x, lastPoint.y)
-  }
-
-  ctx.stroke()
+  // 恢复原始路径
+  currentPath.value = originalPath
 }
 
 // 继续绘制
@@ -654,10 +718,11 @@ const startReplay = (replayData: SignatureReplay, options?: ReplayOptions): void
 
   if (replayController.value) {
     isReplayMode.value = true
-    // 传递当前的绘制选项确保一致性
+    // 传递当前的绘制选项和笔迹样式确保一致性
     const replayOptionsWithDrawOptions = {
       ...options,
-      drawOptions: drawOptions.value
+      drawOptions: drawOptions.value,
+      penStyle: props.penStyle
     }
     replayController.value.setReplayData(replayData, replayOptionsWithDrawOptions)
     console.log('startReplay调用，自动播放:', options?.autoPlay)
@@ -874,10 +939,11 @@ watch(() => props.replayData, (newData: SignatureReplay | undefined) => {
     if (replayController.value) {
       // 只设置数据，不自动播放
       console.log('开始设置回放数据到控制器')
-      // 传递当前的绘制选项确保一致性
+      // 传递当前的绘制选项和笔迹样式确保一致性
       const replayOptionsWithDrawOptions = {
         ...props.replayOptions,
-        drawOptions: drawOptions.value
+        drawOptions: drawOptions.value,
+        penStyle: props.penStyle
       }
       replayController.value.setReplayData(newData, replayOptionsWithDrawOptions)
       console.log('回放数据已更新:', newData)
