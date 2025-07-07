@@ -472,6 +472,12 @@ const generateReplayData = () => {
     replayData.value = recordingSignatureRef.value.getReplayData()
     console.log('生成回放数据完成:', replayData.value)
     console.log('回放数据是否为null:', replayData.value === null)
+
+    // 自动启用回放模式
+    if (replayData.value && !replayMode.value) {
+      console.log('自动启用回放模式')
+      replayMode.value = true
+    }
   } else {
     console.warn('签名数据为空，无法生成回放数据')
   }
