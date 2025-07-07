@@ -28,11 +28,8 @@ export class SignatureReplayController implements ReplayController {
   private eventCallbacks: Map<string, Function[]> = new Map()
 
   // 性能优化相关
-  private lastRenderedTime: number = -1
-  private completedPaths: Set<number> = new Set()
   private offscreenCanvas: HTMLCanvasElement | null = null
   private offscreenCtx: CanvasRenderingContext2D | null = null
-  private needsFullRedraw: boolean = true
 
   constructor(canvas: HTMLCanvasElement) {
     this.canvas = canvas
@@ -74,10 +71,6 @@ export class SignatureReplayController implements ReplayController {
    * 重置优化状态
    */
   private resetOptimizationState(): void {
-    this.lastRenderedTime = -1
-    this.completedPaths.clear()
-    this.needsFullRedraw = true
-
     // 重新初始化离屏画布
     if (this.offscreenCanvas) {
       this.offscreenCanvas.width = this.canvas.width
@@ -175,8 +168,7 @@ export class SignatureReplayController implements ReplayController {
     const maxTime = this.options.endTime || this.replayData.totalDuration
     this.currentTime = Math.max(0, Math.min(time, maxTime))
 
-    // 跳转时需要完全重绘
-    this.needsFullRedraw = true
+    // 跳转时重新渲染
 
     if (this.state === 'playing') {
       this.startTimestamp = performance.now() - this.currentTime / this.speed
@@ -269,32 +261,34 @@ export class SignatureReplayController implements ReplayController {
   }
 
   /**
-   * 渲染指定时间的帧 - 优化版本，减少重绘
+   * 渲染指定时间的帧 - 双缓冲技术，完全消除闪烁
    */
   private renderFrame(time: number): void {
-    if (!this.replayData) return
+    if (!this.replayData || !this.offscreenCanvas || !this.offscreenCtx) return
 
-    // 检查是否需要完全重绘
-    const needsFullRedraw = this.needsFullRedraw || time < this.lastRenderedTime
+    // 在离屏画布上绘制完整帧
+    this.renderToOffscreenCanvas(time)
 
-    if (needsFullRedraw) {
-      this.renderFullFrame(time)
-      this.needsFullRedraw = false
-    } else {
-      this.renderIncrementalFrame(time)
-    }
-
-    this.lastRenderedTime = time
+    // 一次性将离屏画布内容复制到主画布
+    this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height)
+    this.ctx.drawImage(this.offscreenCanvas, 0, 0)
   }
 
   /**
-   * 完全重绘帧（用于初始化或时间倒退）
+   * 在离屏画布上渲染完整帧
    */
-  private renderFullFrame(time: number): void {
-    if (!this.replayData) return
+  private renderToOffscreenCanvas(time: number): void {
+    if (!this.replayData || !this.offscreenCtx) return
 
-    this.clearCanvas()
-    this.completedPaths.clear()
+    // 清除离屏画布
+    this.offscreenCtx.clearRect(0, 0, this.offscreenCanvas!.width, this.offscreenCanvas!.height)
+
+    // 设置背景（如果需要）
+    // 注意：这里暂时注释掉背景设置，因为ReplayOptions中没有backgroundColor属性
+    // if (this.options.backgroundColor) {
+    //   this.offscreenCtx.fillStyle = this.options.backgroundColor
+    //   this.offscreenCtx.fillRect(0, 0, this.offscreenCanvas!.width, this.offscreenCanvas!.height)
+    // }
 
     let hasActiveStroke = false
 
@@ -310,8 +304,7 @@ export class SignatureReplayController implements ReplayController {
 
       if (time >= pathEndTime) {
         // 这个笔画已经完成，完整绘制
-        this.drawCompletePath(path)
-        this.completedPaths.add(i)
+        this.drawCompletePathToOffscreen(path)
 
         // 检查是否刚刚完成这个笔画
         if (!hasActiveStroke && Math.abs(time - pathEndTime) < 32) { // 约2帧的容差
@@ -329,163 +322,15 @@ export class SignatureReplayController implements ReplayController {
         this.emit('replay-path-start', i, path)
       }
 
-      this.drawPartialPath(path, pathProgress)
+      this.drawPartialPathToOffscreen(path, pathProgress)
       break
     }
   }
 
-  /**
-   * 增量渲染帧（只更新变化的部分）
-   */
-  private renderIncrementalFrame(time: number): void {
-    if (!this.replayData) return
 
-    // 找到当前正在绘制的路径
-    for (let i = 0; i < this.replayData.paths.length; i++) {
-      const path = this.replayData.paths[i]
-      const pathStartTime = path.startTime || 0
-      const pathEndTime = path.endTime || pathStartTime + (path.duration || 0)
 
-      if (time < pathStartTime) {
-        break
-      }
 
-      if (time >= pathEndTime) {
-        // 检查这个路径是否刚刚完成
-        if (!this.completedPaths.has(i)) {
-          // 路径刚完成，需要重绘这个路径
-          this.drawCompletePath(path)
-          this.completedPaths.add(i)
-          this.emit('replay-path-end', i, path)
-        }
-        continue
-      }
 
-      // 正在绘制的路径 - 使用离屏画布优化
-      this.renderActivePathOptimized(path, time, pathStartTime, pathEndTime, i)
-      break
-    }
-  }
-
-  /**
-   * 优化的活动路径渲染
-   */
-  private renderActivePathOptimized(path: SignaturePath, time: number, pathStartTime: number, pathEndTime: number, pathIndex: number): void {
-    if (!this.offscreenCanvas || !this.offscreenCtx) return
-
-    const pathProgress = Math.max(0, Math.min(1, (time - pathStartTime) / Math.max(pathEndTime - pathStartTime, 1)))
-
-    // 检查是否刚开始这个笔画
-    if (pathProgress > 0 && Math.abs(time - pathStartTime) < 32) {
-      this.emit('replay-path-start', pathIndex, path)
-    }
-
-    // 清除当前路径区域（估算边界框）
-    const bounds = this.getPathBounds(path, pathProgress)
-    if (bounds) {
-      // 清除主画布上的路径区域
-      this.ctx.clearRect(bounds.x - 10, bounds.y - 10, bounds.width + 20, bounds.height + 20)
-
-      // 重新绘制所有已完成的路径到这个区域
-      this.redrawCompletedPathsInBounds(bounds)
-    }
-
-    // 绘制当前进度的路径
-    this.drawPartialPath(path, pathProgress)
-  }
-
-  /**
-   * 获取路径的边界框
-   */
-  private getPathBounds(path: SignaturePath, progress: number): { x: number; y: number; width: number; height: number } | null {
-    if (path.points.length === 0) return null
-
-    const visiblePointCount = Math.ceil(path.points.length * progress)
-    const visiblePoints = path.points.slice(0, visiblePointCount)
-
-    if (visiblePoints.length === 0) return null
-
-    let minX = visiblePoints[0].x
-    let maxX = visiblePoints[0].x
-    let minY = visiblePoints[0].y
-    let maxY = visiblePoints[0].y
-
-    for (const point of visiblePoints) {
-      minX = Math.min(minX, point.x)
-      maxX = Math.max(maxX, point.x)
-      minY = Math.min(minY, point.y)
-      maxY = Math.max(maxY, point.y)
-    }
-
-    return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY
-    }
-  }
-
-  /**
-   * 在指定边界内重绘已完成的路径
-   */
-  private redrawCompletedPathsInBounds(bounds: { x: number; y: number; width: number; height: number }): void {
-    if (!this.replayData) return
-
-    for (let i = 0; i < this.replayData.paths.length; i++) {
-      if (this.completedPaths.has(i)) {
-        const path = this.replayData.paths[i]
-        // 简单检查路径是否与边界相交
-        if (this.pathIntersectsBounds(path, bounds)) {
-          this.drawCompletePath(path)
-        }
-      }
-    }
-  }
-
-  /**
-   * 检查路径是否与边界相交
-   */
-  private pathIntersectsBounds(path: SignaturePath, bounds: { x: number; y: number; width: number; height: number }): boolean {
-    for (const point of path.points) {
-      if (point.x >= bounds.x && point.x <= bounds.x + bounds.width &&
-          point.y >= bounds.y && point.y <= bounds.y + bounds.height) {
-        return true
-      }
-    }
-    return false
-  }
-
-  /**
-   * 绘制完整路径 - 使用与录制时相同的笔迹样式算法
-   */
-  private drawCompletePath(path: SignaturePath): void {
-    if (path.points.length < 2) return
-
-    // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
-    const penStyle = path.penStyle || this.options.penStyle || 'pen'
-    this.drawStyledStrokeForReplay(path.points, penStyle, path.strokeColor, path.strokeWidth)
-  }
-
-  /**
-   * 绘制部分路径 - 使用与录制时相同的笔迹样式算法
-   */
-  private drawPartialPath(path: SignaturePath, progress: number): void {
-    if (path.points.length < 2) return
-
-    // 基于时间而不是点数来计算进度
-    const pathStartTime = path.startTime || 0
-    const pathDuration = path.duration || 0
-    const currentPathTime = pathStartTime + pathDuration * progress
-
-    // 找到当前时间对应的点
-    const visiblePoints = this.getPointsUpToTime(path.points, pathStartTime, currentPathTime)
-
-    if (visiblePoints.length < 2) return
-
-    // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
-    const penStyle = path.penStyle || this.options.penStyle || 'pen'
-    this.drawStyledStrokeForReplay(visiblePoints, penStyle, path.strokeColor, path.strokeWidth)
-  }
 
   /**
    * 获取指定时间内的所有点
@@ -811,6 +656,52 @@ export class SignatureReplayController implements ReplayController {
     if (callbacks) {
       callbacks.forEach(callback => callback(...args))
     }
+  }
+
+  /**
+   * 在离屏画布上绘制完整路径
+   */
+  private drawCompletePathToOffscreen(path: SignaturePath): void {
+    if (!this.offscreenCtx || path.points.length < 2) return
+
+    // 临时切换绘制上下文
+    const originalCtx = this.ctx
+    this.ctx = this.offscreenCtx
+
+    // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
+    const penStyle = path.penStyle || this.options.penStyle || 'pen'
+    this.drawStyledStrokeForReplay(path.points, penStyle, path.strokeColor, path.strokeWidth)
+
+    // 恢复原始上下文
+    this.ctx = originalCtx
+  }
+
+  /**
+   * 在离屏画布上绘制部分路径
+   */
+  private drawPartialPathToOffscreen(path: SignaturePath, progress: number): void {
+    if (!this.offscreenCtx || path.points.length < 2) return
+
+    // 基于时间而不是点数来计算进度
+    const pathStartTime = path.startTime || 0
+    const pathDuration = path.duration || 0
+    const currentPathTime = pathStartTime + pathDuration * progress
+
+    // 找到当前时间对应的点
+    const visiblePoints = this.getPointsUpToTime(path.points, pathStartTime, currentPathTime)
+
+    if (visiblePoints.length < 2) return
+
+    // 临时切换绘制上下文
+    const originalCtx = this.ctx
+    this.ctx = this.offscreenCtx
+
+    // 优先使用路径中保存的笔迹样式，如果没有则使用选项中的样式
+    const penStyle = path.penStyle || this.options.penStyle || 'pen'
+    this.drawStyledStrokeForReplay(visiblePoints, penStyle, path.strokeColor, path.strokeWidth)
+
+    // 恢复原始上下文
+    this.ctx = originalCtx
   }
 
   /**

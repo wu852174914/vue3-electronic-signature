@@ -15,11 +15,8 @@ export declare class SignatureReplayController implements ReplayController {
     private pausedTime;
     private options;
     private eventCallbacks;
-    private lastRenderedTime;
-    private completedPaths;
     private offscreenCanvas;
     private offscreenCtx;
-    private needsFullRedraw;
     constructor(canvas: HTMLCanvasElement);
     /**
      * 初始化离屏画布用于性能优化
@@ -74,41 +71,13 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private animate;
     /**
-     * 渲染指定时间的帧 - 优化版本，减少重绘
+     * 渲染指定时间的帧 - 双缓冲技术，完全消除闪烁
      */
     private renderFrame;
     /**
-     * 完全重绘帧（用于初始化或时间倒退）
+     * 在离屏画布上渲染完整帧
      */
-    private renderFullFrame;
-    /**
-     * 增量渲染帧（只更新变化的部分）
-     */
-    private renderIncrementalFrame;
-    /**
-     * 优化的活动路径渲染
-     */
-    private renderActivePathOptimized;
-    /**
-     * 获取路径的边界框
-     */
-    private getPathBounds;
-    /**
-     * 在指定边界内重绘已完成的路径
-     */
-    private redrawCompletedPathsInBounds;
-    /**
-     * 检查路径是否与边界相交
-     */
-    private pathIntersectsBounds;
-    /**
-     * 绘制完整路径 - 使用与录制时相同的笔迹样式算法
-     */
-    private drawCompletePath;
-    /**
-     * 绘制部分路径 - 使用与录制时相同的笔迹样式算法
-     */
-    private drawPartialPath;
+    private renderToOffscreenCanvas;
     /**
      * 获取指定时间内的所有点
      */
@@ -141,6 +110,14 @@ export declare class SignatureReplayController implements ReplayController {
      * 触发事件
      */
     private emit;
+    /**
+     * 在离屏画布上绘制完整路径
+     */
+    private drawCompletePathToOffscreen;
+    /**
+     * 在离屏画布上绘制部分路径
+     */
+    private drawPartialPathToOffscreen;
     /**
      * 销毁控制器
      */
