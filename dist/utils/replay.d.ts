@@ -104,17 +104,25 @@ export declare class SignatureReplayController implements ReplayController {
      */
     private drawStyledStrokeForReplay;
     /**
-     * 绘制优雅笔迹 - 基于Paper.js技术的平滑渐变效果
+     * 绘制优雅笔迹 - 基于Fabric.js和Vue3-Signature-Pad的速度压力感应技术
      */
     private drawElegantStroke;
     /**
-     * 绘制优雅笔迹的单个线段 - 基于Paper.js的渐变技术
+     * 预处理点数据，计算速度和动态线宽 - 基于Vue3-Signature-Pad算法
      */
-    private drawElegantSegment;
+    private preprocessPointsForVelocity;
     /**
-     * 添加连笔的优美效果 - 基于Paper.js的平滑连接技术
+     * 基于速度的路径绘制 - 使用Fabric.js的平滑算法
      */
-    private addElegantConnections;
+    private drawVelocityBasedPath;
+    /**
+     * 绘制基于速度的单个线段 - 实现由粗到细的渐变
+     */
+    private drawVelocitySegment;
+    /**
+     * 基于速度变化的智能连接 - 优化连笔效果
+     */
+    private addVelocityBasedConnections;
     /**
      * 平滑插值函数 - 基于Paper.js的平滑算法
      */

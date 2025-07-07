@@ -729,7 +729,7 @@ export class SignatureReplayController implements ReplayController {
   }
 
   /**
-   * 绘制优雅笔迹 - 基于Paper.js技术的平滑渐变效果
+   * 绘制优雅笔迹 - 基于Fabric.js和Vue3-Signature-Pad的速度压力感应技术
    */
   private drawElegantStroke(points: SignaturePoint[], strokeColor: string, strokeWidth: number): void {
     if (points.length < 2) return
@@ -740,59 +740,130 @@ export class SignatureReplayController implements ReplayController {
     this.ctx.lineJoin = 'round'
     this.ctx.globalCompositeOperation = 'source-over'
 
-    // 基于Paper.js的平滑路径技术
-    // 使用多段贝塞尔曲线创建流畅的渐变效果
-    for (let i = 1; i < points.length; i++) {
-      const currentPoint = points[i]
-      const prevPoint = points[i - 1]
+    // 基于Fabric.js PencilBrush的速度感应算法
+    // 预处理点数据，计算速度和压力
+    const processedPoints = this.preprocessPointsForVelocity(points, strokeWidth)
 
-      // 计算动态线宽
-      const currentWidth = this.calculateDynamicStrokeWidth(currentPoint, prevPoint, 'elegant', strokeWidth)
-      const prevWidth = i > 1 ?
-        this.calculateDynamicStrokeWidth(prevPoint, points[i - 2], 'elegant', strokeWidth) :
-        currentWidth
+    // 使用Fabric.js的平滑路径技术绘制连续渐变
+    this.drawVelocityBasedPath(processedPoints)
 
-      // 创建渐变路径 - 基于Paper.js的DrippingBrush技术
-      this.drawElegantSegment(prevPoint, currentPoint, prevWidth, currentWidth)
-    }
-
-    // 添加连笔的优美效果 - 基于Paper.js的平滑技术
-    this.addElegantConnections(points, strokeWidth)
+    // 添加连笔的优美效果 - 基于速度变化的智能连接
+    this.addVelocityBasedConnections(processedPoints)
   }
 
   /**
-   * 绘制优雅笔迹的单个线段 - 基于Paper.js的渐变技术
+   * 预处理点数据，计算速度和动态线宽 - 基于Vue3-Signature-Pad算法
    */
-  private drawElegantSegment(
-    startPoint: SignaturePoint,
-    endPoint: SignaturePoint,
+  private preprocessPointsForVelocity(points: SignaturePoint[], baseWidth: number): Array<SignaturePoint & {
+    velocity: number,
+    dynamicWidth: number,
+    smoothedWidth: number
+  }> {
+    const processedPoints: Array<SignaturePoint & {
+      velocity: number,
+      dynamicWidth: number,
+      smoothedWidth: number
+    }> = []
+
+    for (let i = 0; i < points.length; i++) {
+      const point = points[i]
+      let velocity = 0
+      let dynamicWidth = baseWidth
+
+      if (i > 0) {
+        const prevPoint = points[i - 1]
+
+        // 计算速度 - 基于Vue3-Signature-Pad的throttle算法
+        const distance = Math.sqrt(
+          Math.pow(point.x - prevPoint.x, 2) +
+          Math.pow(point.y - prevPoint.y, 2)
+        )
+        const timeDiff = Math.max(1, (point.time || 0) - (prevPoint.time || 0))
+        velocity = distance / timeDiff
+
+        // 基于Fabric.js的动态线宽算法
+        const pressure = point.pressure || 0.5
+        const velocityFactor = Math.max(0.2, Math.min(3.0, 100 / Math.max(velocity, 1)))
+
+        // 优雅笔的核心算法：速度越快线条越细，压力越大线条越粗
+        dynamicWidth = baseWidth * (0.3 + pressure * velocityFactor * 1.4)
+      }
+
+      // 平滑线宽变化 - 避免突变
+      let smoothedWidth = dynamicWidth
+      if (i > 0) {
+        const prevWidth = processedPoints[i - 1].smoothedWidth
+        smoothedWidth = prevWidth + (dynamicWidth - prevWidth) * 0.3 // 平滑因子
+      }
+
+      processedPoints.push({
+        ...point,
+        velocity,
+        dynamicWidth,
+        smoothedWidth: Math.max(0.5, Math.min(baseWidth * 3, smoothedWidth))
+      })
+    }
+
+    return processedPoints
+  }
+
+  /**
+   * 基于速度的路径绘制 - 使用Fabric.js的平滑算法
+   */
+  private drawVelocityBasedPath(
+    processedPoints: Array<SignaturePoint & { velocity: number, dynamicWidth: number, smoothedWidth: number }>
+  ): void {
+    if (processedPoints.length < 2) return
+
+    // 基于Fabric.js的convertPointsToSVGPath技术
+    // 创建平滑的连续路径
+    for (let i = 1; i < processedPoints.length; i++) {
+      const currentPoint = processedPoints[i]
+      const prevPoint = processedPoints[i - 1]
+
+      // 绘制渐变线段
+      this.drawVelocitySegment(prevPoint, currentPoint, prevPoint.smoothedWidth, currentPoint.smoothedWidth)
+    }
+  }
+
+  /**
+   * 绘制基于速度的单个线段 - 实现由粗到细的渐变
+   */
+  private drawVelocitySegment(
+    startPoint: SignaturePoint & { smoothedWidth: number },
+    endPoint: SignaturePoint & { smoothedWidth: number },
     startWidth: number,
     endWidth: number
   ): void {
-    // 基于Paper.js的DrippingBrush算法
-    // 创建由粗到细的渐变效果
-    const steps = Math.max(3, Math.floor(Math.sqrt(
-      Math.pow(endPoint.x - startPoint.x, 2) + Math.pow(endPoint.y - startPoint.y, 2)
-    ) / 2))
+    // 基于Fabric.js的PencilBrush算法
+    // 创建平滑的渐变路径
+    const distance = Math.sqrt(
+      Math.pow(endPoint.x - startPoint.x, 2) +
+      Math.pow(endPoint.y - startPoint.y, 2)
+    )
+
+    // 根据距离决定分段数，确保平滑度
+    const segments = Math.max(2, Math.min(10, Math.floor(distance / 3)))
 
     this.ctx.beginPath()
 
-    // 创建路径的上下边界点
-    const topPoints: Array<{x: number, y: number}> = []
-    const bottomPoints: Array<{x: number, y: number}> = []
+    // 创建渐变路径的边界点
+    const pathPoints: Array<{x: number, y: number}> = []
 
-    for (let step = 0; step <= steps; step++) {
-      const t = step / steps
-      const smoothT = this.smoothStep(t) // 使用平滑插值
+    for (let i = 0; i <= segments; i++) {
+      const t = i / segments
+
+      // 使用三次贝塞尔插值实现平滑过渡
+      const smoothT = this.smoothStep(t)
 
       // 插值位置
       const x = startPoint.x + (endPoint.x - startPoint.x) * smoothT
       const y = startPoint.y + (endPoint.y - startPoint.y) * smoothT
 
-      // 插值宽度（创建渐变效果）
+      // 插值宽度 - 关键：实现由粗到细的渐变
       const width = startWidth + (endWidth - startWidth) * smoothT
 
-      // 计算垂直向量
+      // 计算垂直方向
       const dx = endPoint.x - startPoint.x
       const dy = endPoint.y - startPoint.y
       const length = Math.sqrt(dx * dx + dy * dy)
@@ -801,51 +872,53 @@ export class SignatureReplayController implements ReplayController {
         const perpX = -dy / length * width / 2
         const perpY = dx / length * width / 2
 
-        topPoints.push({ x: x + perpX, y: y + perpY })
-        bottomPoints.push({ x: x - perpX, y: y - perpY })
+        // 添加上下边界点
+        if (i === 0) {
+          this.ctx.moveTo(x + perpX, y + perpY)
+        } else {
+          this.ctx.lineTo(x + perpX, y + perpY)
+        }
+
+        pathPoints.push({ x: x - perpX, y: y - perpY })
       }
     }
 
-    // 绘制填充路径 - 基于Paper.js的路径构建技术
-    if (topPoints.length > 0 && bottomPoints.length > 0) {
-      this.ctx.moveTo(topPoints[0].x, topPoints[0].y)
-
-      // 绘制上边界
-      for (let i = 1; i < topPoints.length; i++) {
-        this.ctx.lineTo(topPoints[i].x, topPoints[i].y)
-      }
-
-      // 绘制下边界（反向）
-      for (let i = bottomPoints.length - 1; i >= 0; i--) {
-        this.ctx.lineTo(bottomPoints[i].x, bottomPoints[i].y)
-      }
-
-      this.ctx.closePath()
-      this.ctx.fill()
+    // 绘制下边界（反向）
+    for (let i = pathPoints.length - 1; i >= 0; i--) {
+      this.ctx.lineTo(pathPoints[i].x, pathPoints[i].y)
     }
+
+    this.ctx.closePath()
+    this.ctx.fill()
   }
 
   /**
-   * 添加连笔的优美效果 - 基于Paper.js的平滑连接技术
+   * 基于速度变化的智能连接 - 优化连笔效果
    */
-  private addElegantConnections(points: SignaturePoint[], baseWidth: number): void {
-    // 在连笔处添加平滑的连接效果
-    for (let i = 1; i < points.length - 1; i++) {
-      const prevPoint = points[i - 1]
-      const currentPoint = points[i]
-      const nextPoint = points[i + 1]
+  private addVelocityBasedConnections(
+    processedPoints: Array<SignaturePoint & { velocity: number, dynamicWidth: number, smoothedWidth: number }>
+  ): void {
+    // 基于Fabric.js的智能连接算法
+    for (let i = 1; i < processedPoints.length - 1; i++) {
+      const prevPoint = processedPoints[i - 1]
+      const currentPoint = processedPoints[i]
+      const nextPoint = processedPoints[i + 1]
+
+      // 计算速度变化率
+      const velocityChange = Math.abs(currentPoint.velocity - prevPoint.velocity)
+      const avgVelocity = (currentPoint.velocity + prevPoint.velocity) / 2
 
       // 计算角度变化
       const angle1 = Math.atan2(currentPoint.y - prevPoint.y, currentPoint.x - prevPoint.x)
       const angle2 = Math.atan2(nextPoint.y - currentPoint.y, nextPoint.x - currentPoint.x)
       const angleDiff = Math.abs(angle2 - angle1)
 
-      // 在转折处添加平滑连接
-      if (angleDiff > 0.3) { // 约17度
-        const connectionWidth = this.calculateDynamicStrokeWidth(currentPoint, prevPoint, 'elegant', baseWidth)
+      // 智能连接：在速度变化大或角度变化大的地方添加连接
+      if (velocityChange > avgVelocity * 0.5 || angleDiff > 0.2) {
+        const connectionRadius = currentPoint.smoothedWidth * 0.4
 
         this.ctx.beginPath()
-        this.ctx.arc(currentPoint.x, currentPoint.y, connectionWidth / 3, 0, Math.PI * 2)
+        this.ctx.arc(currentPoint.x, currentPoint.y, connectionRadius, 0, Math.PI * 2)
         this.ctx.fill()
       }
     }
