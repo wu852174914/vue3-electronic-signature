@@ -494,9 +494,10 @@ const startReplay = (replayData: SignatureReplay, options?: ReplayOptions): void
 
   if (replayController.value) {
     isReplayMode.value = true
-    replayController.value.setReplayData(replayData, options)
+    replayController.value.setReplayData(replayData, options || {})
+    console.log('startReplay调用，自动播放:', options?.autoPlay)
 
-    if (options?.autoPlay !== false) {
+    if (options?.autoPlay === true) {
       replayController.value.play()
     }
   }
@@ -681,8 +682,10 @@ watch(() => props.replayMode, (newMode: boolean | undefined) => {
 
 // 监听回放数据变化
 watch(() => props.replayData, (newData: SignatureReplay | undefined) => {
-  if (newData && props.replayMode) {
-    startReplay(newData, props.replayOptions)
+  if (newData && props.replayMode && replayController.value) {
+    // 只设置数据，不自动播放
+    replayController.value.setReplayData(newData, props.replayOptions || {})
+    console.log('回放数据已更新:', newData)
   }
 })
 

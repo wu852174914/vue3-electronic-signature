@@ -470,9 +470,16 @@ const generateReplayData = () => {
 const startReplay = () => {
   if (!playbackSignatureRef.value || !replayData.value) return
 
-  replayMode.value = true
-  playbackSignatureRef.value.setReplayMode(true)
-  playbackSignatureRef.value.startReplay(replayData.value, replayOptions)
+  console.log('开始回放，数据:', replayData.value)
+  console.log('回放选项:', replayOptions)
+
+  // 确保回放模式已启用
+  if (!replayMode.value) {
+    replayMode.value = true
+  }
+
+  // 直接调用播放方法，因为组件已经通过props设置了回放数据
+  playbackSignatureRef.value.play()
 }
 
 const pauseReplay = () => {
@@ -485,7 +492,12 @@ const stopReplay = () => {
 
 const toggleReplayMode = () => {
   replayMode.value = !replayMode.value
-  playbackSignatureRef.value?.setReplayMode(replayMode.value)
+  console.log('切换回放模式:', replayMode.value)
+
+  if (!replayMode.value) {
+    // 退出回放模式时停止播放
+    playbackSignatureRef.value?.stop()
+  }
 }
 
 const changeReplaySpeed = () => {

@@ -35,26 +35,45 @@ export class SignatureReplayController implements ReplayController {
    * 设置回放数据
    */
   setReplayData(data: SignatureReplay, options: ReplayOptions = {}): void {
+    console.log('设置回放数据:', data)
+    console.log('回放选项:', options)
+
     this.replayData = data
     this.options = { ...options }
     this.speed = options.speed || data.speed || 1
     this.currentTime = options.startTime || 0
     this.state = 'idle'
+
+    console.log('回放数据设置完成，路径数量:', data.paths.length)
+    console.log('总时长:', data.totalDuration)
   }
 
   /**
    * 开始播放
    */
   play(): void {
-    if (!this.replayData || this.state === 'playing') return
+    console.log('播放方法调用，回放数据:', this.replayData)
+    console.log('当前状态:', this.state)
+
+    if (!this.replayData) {
+      console.error('没有回放数据，无法播放')
+      return
+    }
+
+    if (this.state === 'playing') {
+      console.log('已在播放中，忽略')
+      return
+    }
 
     if (this.state === 'paused') {
       // 从暂停状态恢复
+      console.log('从暂停状态恢复播放')
       this.state = 'playing'
       this.startTimestamp = performance.now() - this.pausedTime
       this.emit('replay-resume')
     } else {
       // 开始新的播放
+      console.log('开始新的播放')
       this.state = 'playing'
       this.startTimestamp = performance.now()
       this.pausedTime = 0
